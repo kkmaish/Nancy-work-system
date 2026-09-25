@@ -1,0 +1,2414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#065f46" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Nancy System" />
+<title>Nancy's System</title>
+<style>
+  :root {
+    --deep: #065f46; --emer: #059669; --gold: #d97706; --goldlt: #fbbf24;
+    --bg: #f6f4ec; --card: #ffffff; --ink: #1c1917; --mut: #78716c;
+    --line: #e7e0cd; --ok: #15803d; --bad: #b91c1c;
+    --grad: linear-gradient(120deg, #064e3b 0%, #065f46 45%, #b45309 130%);
+    --goldgrad: linear-gradient(120deg, #b45309, #f59e0b);
+    --shadow: 0 12px 32px rgba(6, 95, 70, .12);
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia,
+    background: linear-gradient(180deg, rgba(186,230,253,.55) 0%, rgba(125,211,252,.45) 25%, rgba(186,230,253,.35) 60%, rgba(224,242,254,.5) 100%) fixed; }
+  #ocean { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; opacity: .35; transition: opacity 1.5s; }
+  #oceanVideo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .8; }
+  aside.sidebar, main, footer.sysfoot { position: relative; z-index: 1; }
+  .fish { position: absolute; white-space: nowrap; animation: swim linear infinite; }
+  .fish img { border-radius: 50%; object-fit: cover; box-shadow: 0 4px 18px rgba(2,60,90,.35); -webkit-mask-image: radial-gradient(ellipse at center, black 62%, transparent 98%); mask-image: radial-gradient(ellipse at center, black 62%, transparent 98%); }
+  .fish.rev { animation-direction: reverse; }
+  .fish.live { animation: none; }
+  .fish.live img { transition: transform .4s; }
+  .bubble.trail { bottom: auto; animation: drift 3.5s ease-out forwards; }
+  @keyframes drift { to { transform: translateY(-70px); opacity: 0; } }
+  .ripple { position: absolute; border: 2px solid rgba(255,255,255,.55); border-radius: 50%; pointer-events: none; animation: rip 2.4s ease-out forwards; }
+  @keyframes rip { from { transform: scale(.4); opacity: .8; } to { transform: scale(1.5); opacity: 0; } }
+  @keyframes swim { from { transform: translateX(-15vw); } to { transform: translateX(115vw); } }
+  .bubble { position: absolute; bottom: -20px; border-radius: 50%; border: 2px solid rgba(255,255,255,.5); background: rgba(255,255,255,.12); animation: rise linear infinite; }
+  @keyframes rise { to { transform: translateY(-110vh); } }
+  @media (prefers-reduced-motion: reduce) { .fish, .bubble { animation: none; } }
+  body { font-family: Georgia, 'Times New Roman', serif; background: transparent; color: var(--ink); min-height: 100vh; }
+  body, input, select, textarea, button { font-family: 'Segoe UI', system-ui, sans-serif; }
+  h1, h2, h3, .serif { font-family: Georgia, 'Times New Roman', serif; }
+  body { display: flex; }
+  aside.sidebar { width: 258px; min-height: 100vh; background: var(--grad); color: #fff; display: flex; flex-direction: column; padding: 22px 16px; position: sticky; top: 0; height: 100vh; box-shadow: 6px 0 28px rgba(6,78,59,.35); z-index: 20; }
+  .content { flex: 1; min-width: 0; }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand img { width: 58px; height: 58px; border-radius: 50%; background: #fff; object-fit: contain; padding: 4px; border: 3px solid var(--goldlt); box-shadow: 0 0 0 3px rgba(251,191,36,.35); }
+  .brand h1 { font-size: 24px; letter-spacing: .5px; }
+  .brand h1 span { color: var(--goldlt); }
+  .brand small { display: block; font-size: 12px; opacity: .85; font-family: 'Segoe UI', sans-serif; }
+  .tabs { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; flex: 1; overflow-y: auto; }
+  .tabs button { background: rgba(255,255,255,.07); border: 1px solid transparent; color: #fdf6e3; font-weight: 700; font-size: 14.5px; padding: 12px 15px; cursor: pointer; border-radius: 14px; transition: .18s; text-align: left; display: flex; align-items: center; gap: 10px; }
+  .tabs button:hover { background: rgba(251,191,36,.22); transform: translateX(4px); color: #fff; }
+  .tabs button.active { background: linear-gradient(120deg, #fbbf24, #f59e0b); color: #064e3b; box-shadow: 0 6px 16px rgba(0,0,0,.3); }
+  main { padding: 26px; max-width: 1200px; margin: auto; width: 100%; }
+  .page-title { font-size: 30px; color: var(--deep); }
+  .page-sub { color: var(--mut); margin: 6px 0 0; font-size: 14px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 18px; }
+  .card { background: var(--card); padding: 22px; border-radius: var(--radius); box-shadow: var(--shadow); margin-top: 16px; border-left: 6px solid var(--emer); transition: .15s; }
+  .cards .card { margin-top: 0; }
+  .card:hover { transform: translateY(-2px); }
+  .card.gold { border-left-color: var(--gold); }
+  .card.wine { border-left-color: #9d174d; }
+  .card.green { border-left-color: var(--ok); }
+  .card h3 { color: var(--deep); margin-bottom: 8px; font-size: 17px; }
+  .stat-num { font-size: 32px; font-weight: 800; color: var(--deep); }
+  .db-box { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); margin-top: 20px; overflow: auto; border-top: 5px solid var(--gold); }
+  .db-head { padding: 18px 22px; border-bottom: 1px solid var(--line); display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; background: linear-gradient(180deg, #fffdf5, #fff); }
+  .db-head h2 { font-size: 19px; color: var(--deep); }
+  .db-head input, .db-head select { padding: 10px 14px; border: 1.5px solid var(--line); border-radius: 10px; font-size: 14px; max-width: 100%; outline: none; background: #fff; }
+  .db-head input:focus { border-color: var(--emer); box-shadow: 0 0 0 3px rgba(5,150,105,.12); }
+  table { width: 100%; min-width: 950px; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 11px; border-bottom: 1px solid #f0ead6; }
+  th { background: #f7f2e2; color: var(--deep); white-space: nowrap; }
+  tr:hover td { background: #fffdf4; }
+  td input { width: 80px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; outline: none; }
+  td input:focus { border-color: var(--emer); }
+  td input.item-input { width: 170px; }
+  td.bad { color: var(--bad); font-weight: 700; text-decoration: underline; text-decoration-thickness: 2px; }
+  td.fixed { background: #dcfce7; font-weight: 700; }
+  label { font-size: 13px; font-weight: 600; color: #44403c; display: block; margin: 12px 0 6px; }
+  .form-card input, .form-card select, .form-card textarea { width: 100%; padding: 11px 13px; border: 1.5px solid var(--line); border-radius: 10px; font-size: 14px; outline: none; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .btn-small { background: var(--goldgrad); color: #fff; border: none; border-radius: 10px; padding: 11px 18px; font-weight: 700; cursor: pointer; margin-top: 12px; box-shadow: 0 4px 12px rgba(217,119,6,.35); transition: .15s; }
+  .btn-small:hover { transform: translateY(-1px); }
+  .btn-green { background: linear-gradient(120deg, #047857, #10b981); color: #fff; border: none; border-radius: 10px; padding: 11px 18px; font-weight: 700; cursor: pointer; margin-top: 12px; }
+  .btn-danger { background: #dc2626; color: white; border: none; border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 12px; }
+  .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .report-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; }
+  .report-card h3 { color: var(--deep); margin-bottom: 10px; font-size: 16px; }
+  .report-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
+  .rep-table { font-size: 11px; }
+  .rep-table th, .rep-table td { padding: 5px 7px; }
+  .meter { height: 10px; background: #e7e5e4; border-radius: 6px; overflow: hidden; margin-top: 8px; }
+  .meter > div { height: 100%; width: 0%; transition: .3s; }
+  .hint { font-size: 12px; color: var(--mut); margin-top: 6px; }
+  .formula { font-size: 21px; font-weight: 800; background: #fffbeb; border: 2px solid var(--goldlt); border-radius: 12px; padding: 14px 16px; margin: 10px 0; color: var(--deep); }
+  .example { font-size: 14px; color: #44403c; background: #fafaf9; border-radius: 8px; padding: 10px 12px; margin-top: 8px; }
+  .pill { display: inline-block; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 20px; }
+  .pill.ok { background: #dcfce7; color: #166534; }
+  .pill.warn { background: #fef3c7; color: #92400e; }
+  .pill.bad { background: #fee2e2; color: #991b1b; }
+  .page-title { background: linear-gradient(100deg, #065f46 20%, #b45309 90%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .stat-num { background: linear-gradient(120deg, #065f46, #d97706); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  #view-drinks .db-box { border-top: 6px solid #059669; }
+  #view-sales .card, #view-sales .db-box { border-top: 6px solid #65a30d; }
+  #view-expenses .card, #view-expenses .db-box { border-top: 6px solid #e11d48; }
+  #view-reports .db-box { border-top: 6px solid #7c3aed; }
+  #view-ai .db-box { border-top: 6px solid #db2777; }
+  #view-upload .db-box { border-top: 6px solid #0891b2; }
+  #view-scanned .db-box { border-top: 6px solid #b45309; }
+  #view-formulas .card { border-left-color: #d97706; background: linear-gradient(180deg, #fffbeb, #ffffff); }
+  #view-cash .card, #view-cash .db-box { border-top: 6px solid #16a34a; }
+  #view-cash .formula { background: linear-gradient(100deg, #f0fdf4, #fffbeb); border: 2px solid #86efac; }
+  #view-debts .card { border-top: 6px solid #f43f5e; }
+  #view-orders .card { border-top: 6px solid #4f46e5; }
+  #view-wastage .card { border-top: 6px solid #ea580c; }
+  #view-settings .card { border-top: 6px solid #475569; }
+  .side-logout { color: #fde68a; font-weight: 700; font-size: 14px; padding: 12px 8px; text-decoration: none; text-align: center; border: 1px solid rgba(253,230,138,.5); border-radius: 12px; margin-top: 14px; display: block; }
+  .side-logout:hover { background: rgba(251,191,36,.2); }
+  .tabs button { border-radius: 14px; }
+  .tabs button:hover { background: rgba(255,255,255,.12); }
+  .card.gold { background: linear-gradient(180deg, #fffbeb, #ffffff); }
+  .card.purple { background: linear-gradient(180deg, #f5f3ff, #ffffff); }
+  .card.pink { background: linear-gradient(180deg, #fdf2f8, #ffffff); }
+  .card.green { background: linear-gradient(180deg, #f0fdf4, #ffffff); }
+  .card.wine { background: linear-gradient(180deg, #fff1f2, #ffffff); }
+  th { background: linear-gradient(180deg, #faf5e4, #f4ecd4); }
+  .sec-head { display: flex; gap: 14px; align-items: center; margin-bottom: 4px; }
+  .sec-icon { width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center; font-size: 30px; flex-shrink: 0;
+    background: radial-gradient(circle at 30% 30%, #fde68a, #d97706 70%); box-shadow: 0 6px 16px rgba(217,119,6,.4); border: 3px solid #fff; }
+  .sec-icon.green { background: radial-gradient(circle at 30% 30%, #a7f3d0, #059669 70%); box-shadow: 0 6px 16px rgba(5,150,105,.4); }
+  .sec-icon.rose { background: radial-gradient(circle at 30% 30%, #fecdd3, #e11d48 70%); box-shadow: 0 6px 16px rgba(225,29,72,.4); }
+  .sec-icon.blue { background: radial-gradient(circle at 30% 30%, #bfdbfe, #4f46e5 70%); box-shadow: 0 6px 16px rgba(79,70,229,.4); }
+  .sec-icon.dark { background: radial-gradient(circle at 30% 30%, #a7f3d0, #065f46 75%); box-shadow: 0 6px 16px rgba(6,95,70,.45); }
+  footer.sysfoot { text-align: center; color: #a8a29e; font-size: 12px; padding: 26px 0 10px; }
+  footer.sysfoot b { color: #b45309; }
+  #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--deep); color: white; padding: 12px 22px; border-radius: 12px; font-size: 14px; font-weight: 600; transition: .3s; z-index: 99; opacity: 0; box-shadow: 0 10px 30px rgba(0,0,0,.3); }
+  #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  @media (max-width: 900px) { .report-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 640px) { .row2 { grid-template-columns: 1fr; } main { padding: 14px; } }
+  @media (max-width: 860px) { body { display: block; } aside.sidebar { width: 100%; min-height: 0; height: auto; position: static; } .tabs { flex-direction: row; overflow-x: auto; } .tabs button { white-space: nowrap; } }
+  main, aside.sidebar { transition: opacity 1.5s; }
+  body.idle main { opacity: .07; }
+  body.idle aside.sidebar { opacity: .12; }
+  body.idle #ocean { opacity: 1; }
+  body.idle #oceanVideo { opacity: 1; }
+  @media print { aside.sidebar, .no-print, #toast, #ocean, #oceanVideo { display: none !important; } body { background: white; display: block; } main { max-width: 100%; padding: 0; } .db-box, .report-card, .card { box-shadow: none; break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div id="ocean" aria-hidden="true"><video id="oceanVideo" muted loop playsinline autoplay preload="auto"></video></div>
+<aside class="sidebar">
+  <div class="brand"><img src="logo.png" alt="Logo" /><h1>NANCY'S <span>SYSTEM</span><small>precious · strong · advanced</small></h1></div>
+  <div class="tabs" id="tabs">
+    <button data-sec="dashboard" class="active" onclick="showSection('dashboard')">📊 Dashboard</button>
+    <button data-sec="drinks" onclick="showSection('drinks')">🥤 Drinks</button>
+    <button data-sec="sales" onclick="showSection('sales')">🧾 Sales</button>
+    <button data-sec="expenses" onclick="showSection('expenses')">💸 Expenses</button>
+    <button data-sec="reports" onclick="showSection('reports')">📝 Reports</button>
+    <button data-sec="ai" onclick="showSection('ai')">🤖 AI Predictor</button>
+    <button data-sec="upload" onclick="showSection('upload')">📤 Upload & Scan</button>
+    <button data-sec="scan" onclick="showSection('upload');setTimeout(()=>{const el=document.getElementById('checkBox');if(el)el.scrollIntoView({block:'start'});},80);return false;">🔍 Scan</button>
+    <button data-sec="scanned" onclick="showSection('scanned')">📑 Scanned Data</button>
+    <button data-sec="formulas" onclick="showSection('formulas')">🧮 Formulas</button>
+    <button data-sec="cash" onclick="showSection('cash')">💰 Cash</button>
+    <button data-sec="debts" onclick="showSection('debts')">📒 Debts</button>
+    <button data-sec="orders" onclick="showSection('orders')">📦 Orders</button>
+    <button data-sec="wastage" onclick="showSection('wastage')">🧾 Wastage</button>
+    <button data-sec="settings" onclick="showSection('settings')">⚙️ Settings</button>
+    <a class="side-logout" href="index.html" style="color:#fde68a;font-weight:700;font-size:14px;padding:12px 8px;text-decoration:none;">⏻ Logout</a>
+  </div>
+</aside>
+<div class="content">
+<main>
+  <div class="view" id="view-dashboard">
+    <div class="sec-head"><div class="sec-icon">📊</div><div><h1 class="page-title">Dashboard</h1>
+    <p class="page-sub" id="welcome">Welcome to the System</p></div></div>
+    <div class="cards">
+      <div class="card"><h3>🥤 Drink items</h3><div class="stat-num" id="statDrinks">–</div><p class="hint" id="drinkTotal">Loading...</p></div>
+      <div class="card gold"><h3>📝 Days recorded</h3><div class="stat-num" id="statDays">–</div><p class="hint">Saved stock days</p></div>
+      <div class="card wine"><h3>📑 Scanned docs</h3><div class="stat-num" id="statScans">–</div><p class="hint">Stored scan results</p></div>
+      <div class="card green"><h3>👥 Staff</h3><div class="stat-num" id="statStaff">–</div><p class="hint">Registered accounts</p></div>
+        <div class="card gold"><h3>💰 Today sales</h3><div class="stat-num" id="statSales">–</div><p class="hint">Recorded revenue</p></div>
+        <div class="card purple"><h3>📈 Today profit</h3><div class="stat-num" id="statProfit">–</div><p class="hint">Sales minus expenses</p></div>
+    </div>
+    <div class="card gold">
+      <h3>⚠️ Low stock watch <span class="pill warn">advanced</span></h3>
+      <div id="lowStock" style="font-size:13px;">Save days to activate the watch.</div>
+    </div>
+    <div class="card">
+      <h3>Quick actions</h3>
+      <div class="report-row">
+        <button class="btn-small" onclick="showSection('drinks')">Open stock sheet</button>
+        <button class="btn-small" onclick="showSection('reports')">Weekly / monthly PDF</button>
+        <button class="btn-small" onclick="showSection('ai')">Run AI predictor</button>
+        <button class="btn-small" onclick="showSection('upload')">Upload a sheet</button>
+      </div>
+    </div>
+  </div>
+  <div class="view" id="view-drinks" style="display:none;">
+    <div class="sec-head"><div class="sec-icon green">🥤</div><div><h1 class="page-title">Drinks Stock Sheet</h1>
+    <p class="page-sub">Opening + Add = Total · Total − Closing = Sales · Sales × Price = Amount · entries auto-save as draft</p></div></div>
+    <div class="db-box" id="drinks">
+      <div class="db-head">
+        <div><h2>Drinks Database</h2><span id="dbCount"></span></div>
+        <div class="report-row">
+          <input id="search" type="text" placeholder="Search drink name..." oninput="filterDrinks()" style="width:200px;" />
+          <input type="date" id="repDate" style="width:auto;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;" />
+          <button class="btn-small" onclick="saveDay()">Save day</button>
+              <button class="btn-green" onclick="savePrices()">Save prices</button>
+          <button class="btn-green" onclick="clearDraft(true)">Clear draft</button>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>No</th><th>Item</th><th>Opening</th><th>Add</th><th>Total</th><th>Closing</th><th>Sales</th><th>Price</th><th>Amount</th></tr></thead>
+        <tbody id="drinkRows"><tr><td colspan="9">Loading...</td></tr></tbody>
+      </table>
+      <datalist id="drinkNames"></datalist>
+    </div>
+  </div>
+
+  <div class="view" id="view-sales" style="display:none;">
+    <div class="sec-head"><div class="sec-icon green">🧾</div><div><h1 class="page-title">Daily Sales</h1>
+    <p class="page-sub">Record every sale as it happens. Today total: <b id="salesTotal">0</b></p></div></div>
+    <div class="card form-card">
+      <h3>New sale</h3>
+      <div class="row2">
+        <div><label>Item</label><input id="saleItem" list="drinkNames" type="text" placeholder="Type item name..." oninput="saleAutofill()" /></div>
+        <div><label>Qty</label><input id="saleQty" type="number" min="1" value="1" oninput="saleAutofill()" /></div>
+      </div>
+      <div class="row2">
+        <div><label>Price each</label><input id="salePrice" type="number" min="0" oninput="saleAutofill()" /></div>
+        <div><label>Amount</label><input id="saleAmount" type="number" readonly style="background:#f5f5f4;" /></div>
+      </div>
+      <button class="btn-small" onclick="addSale()">Record sale</button>
+    </div>
+    <div class="card">
+      <h3>Today's sales</h3>
+      <div style="overflow:auto;"><table style="min-width:0;"><thead><tr><th>Time</th><th>Item</th><th>Qty</th><th>Amount</th><th>Action</th></tr></thead><tbody id="salesRows"></tbody></table></div>
+    </div>
+  </div>
+  <div class="view" id="view-expenses" style="display:none;">
+    <div class="sec-head"><div class="sec-icon rose">💸</div><div><h1 class="page-title">Expenses</h1>
+    <p class="page-sub">Daily running costs. This month: <b id="expTotal">0</b></p></div></div>
+    <div class="card form-card">
+      <h3>New expense</h3>
+      <div class="row2">
+        <div><label>Description</label><input id="expDesc" type="text" placeholder="e.g. Ice, transport" /></div>
+        <div><label>Amount</label><input id="expAmount" type="number" min="0" /></div>
+      </div>
+      <div class="row2">
+        <div><label>Date</label><input id="expDate" type="date" /></div>
+        <div><label>Category</label><select id="expCat"><option>Stock</option><option>Transport</option><option>Ice/Charcoal</option><option>Wages</option><option>Rent/Utilities</option><option>Other</option></select></div>
+      </div>
+      <button class="btn-small" onclick="addExpense()">Record expense</button>
+    </div>
+    <div class="card">
+      <h3>Log</h3>
+      <div style="overflow:auto;"><table style="min-width:0;"><thead><tr><th>Description</th><th>Category</th><th>Amount</th><th>Date</th><th>Action</th></tr></thead><tbody id="expRows"></tbody></table></div>
+    </div>
+  </div>
+  <div class="view" id="view-reports" style="display:none;">
+    <div class="sec-head"><div class="sec-icon blue">📝</div><div><h1 class="page-title">Reports Analysis</h1>
+    <p class="page-sub">Opening charts and closing graphs from scanned data <span class="pill ok">advanced</span></p></div></div>
+    <div class="db-box">
+      <div class="db-head">
+        <div><h2>Daily Analysis</h2><span id="repCount"></span></div>
+        <div class="report-row">
+          <label style="font-size:13px;font-weight:600;">View day:
+            <select id="daySelect" onchange="updateCharts()"></select>
+          </label>
+          <button class="btn-green" onclick="seedDemo(true)">Load sample week</button>
+          <button class="btn-danger" onclick="clearDemo()">Clear demo</button>
+        </div>
+      </div>
+      <div style="padding:18px 20px;">
+        <div class="report-grid">
+          <div class="report-card"><h3>Opening chart (by item)</h3><canvas id="chOpening" height="220"></canvas></div>
+          <div class="report-card"><h3>Closing graph (by item)</h3><canvas id="chClosing" height="220"></canvas></div>
+          <div class="report-card"><h3>Opening vs Closing per day</h3><canvas id="chDaily" height="220"></canvas></div>
+        </div>
+      </div>
+    </div>
+    <div class="db-box no-print">
+      <div class="db-head">
+        <div><h2>Weekly / Monthly PDF Report</h2><span id="genCount"></span></div>
+      </div>
+      <div style="padding:18px 20px;">
+        <div class="report-row">
+          <label style="font-size:13px;font-weight:600;">Type:
+            <select id="repType" onchange="togglePeriod()" style="width:auto;">
+              <option value="week">Weekly</option>
+              <option value="month">Monthly</option>
+            </select>
+          </label>
+          <label id="weekWrap" style="font-size:13px;font-weight:600;">Week starting: <input type="date" id="weekStart" style="width:auto;" /></label>
+          <label id="monthWrap" style="font-size:13px;font-weight:600;display:none;">Month: <input type="month" id="repMonth" style="width:auto;" /></label>
+          <button class="btn-small" onclick="genReport()">Generate report</button>
+          <button class="btn-small" onclick="exportPDF()">Export PDF</button>
+        </div>
+      </div>
+    </div>
+    <div class="db-box" id="printReport" style="display:none;">
+      <div class="db-head"><div><h2 id="repTitle"></h2><span id="repSummary"></span></div></div>
+      <div style="padding:18px 20px;">
+        <div class="report-card"><h3>Closing graph — total closing every day</h3><canvas id="rpCloseLine" height="200"></canvas></div>
+        <div class="report-grid">
+          <div class="report-card"><h3>Opening chart — top 20 items</h3><canvas id="rpOpenBar" height="240"></canvas></div>
+          <div class="report-card"><h3>Closing chart — top 20 items</h3><canvas id="rpCloseBar" height="240"></canvas></div>
+        </div>
+        <div class="report-card" style="margin-top:16px;"><h3>Every opening (all items × every day)</h3><div style="overflow:auto;"><table class="rep-table"><thead id="openHead"></thead><tbody id="openBody"></tbody></table></div></div>
+        <div class="report-card" style="margin-top:16px;"><h3>Every closing (all items × every day)</h3><div style="overflow:auto;"><table class="rep-table"><thead id="closeHead"></thead><tbody id="closeBody"></tbody></table></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="view" id="view-ai" style="display:none;">
+    <div class="sec-head"><div class="sec-icon">🤖</div><div><h1 class="page-title">AI Predictor</h1>
+    <p class="page-sub">Future closings, change detection, mistakes and solutions.</p></div></div>
+    <div class="db-box">
+      <div class="db-head">
+        <div><h2>Closing Forecast</h2><span id="aiCount"></span></div>
+        <button class="btn-small" onclick="runAI()">Run AI prediction</button>
+      </div>
+      <div style="padding:18px 20px;">
+        <div class="report-grid">
+          <div class="report-card"><h3>Predicted next-day closing (top 15)</h3><canvas id="chPredict" height="220"></canvas></div>
+          <div class="report-card"><h3>Detected changes & mistakes</h3><div id="aiAlerts" style="font-size:13px;max-height:260px;overflow:auto;">Click Run AI prediction.</div></div>
+        </div>
+        <div class="report-card" style="margin-top:16px;"><h3>Solutions & actions</h3><div id="aiSolutions" style="font-size:13px;"></div></div>
+        <div class="report-card" style="margin-top:16px;"><h3>Prediction table</h3><div style="overflow:auto;"><table style="min-width:600px;"><thead><tr><th>Item</th><th>Last</th><th>Avg(3)</th><th>Predicted</th><th>Recommend open</th></tr></thead><tbody id="aiRows"></tbody></table></div></div>
+      </div>
+    </div>
+    <div class="db-box">
+      <div class="db-head">
+        <div><h2>Scanned Document Error Check</h2><span id="scanCheckCount" style="color:#6b7280;font-size:13px;"></span></div>
+        <button class="btn-small" onclick="checkScannedDocs()">Check scanned documents</button>
+      </div>
+      <div style="padding:18px 20px;">
+        <div id="scanCheckResult" style="font-size:13px;">Checks every scanned document's formulas and verifies rectified versions were corrected rightly.</div>
+      </div>
+    </div>
+  </div>
+  <div class="view" id="view-formulas" style="display:none;">
+    <div class="sec-head"><div class="sec-icon">🧮</div><div><h1 class="page-title">Stock Formulas</h1>
+    <p class="page-sub">The three golden rules every row must follow.</p></div></div>
+    <div class="card gold"><h3>1. Total stock</h3><div class="formula">Total = Opening + Add</div><div class="example">Example: Opening 41 + Add 25 = Total 66</div></div>
+    <div class="card"><h3>2. Sales</h3><div class="formula">Sales = Total − Closing</div><div class="example">Example: Total 66 − Closing 59 = Sales 7</div></div>
+    <div class="card green"><h3>3. Amount</h3><div class="formula">Amount = Sales × Price</div><div class="example">Example: Sales 7 × Price 300 = Amount 2100</div></div>
+  </div>
+  <div class="view" id="view-upload" style="display:none;">
+    <div class="sec-head"><div class="sec-icon blue">📤</div><div><h1 class="page-title">Upload & Scan</h1>
+    <p class="page-sub">Sheet photos, online enhancers, phone text and document checks.</p></div></div>
+    <div class="db-box" id="scanPanel">
+      <div class="db-head"><div><h2>🔍 Scan Center — visible scanner</h2><span id="scanPanelStatus" style="color:#6b7280;font-size:13px;"></span></div></div>
+      <div style="padding:18px 20px;">
+        <div class="report-row">
+          <button class="btn-green" onclick="scanAllUploads()">🔍 Scan all uploaded sheets</button>
+          <button class="btn-small" onclick="showSection('upload');setTimeout(()=>{const el=document.getElementById('phoneBox');if(el)el.scrollIntoView();},80);">📱 Phone text scan</button>
+        </div>
+        <div id="scanPanelOut" style="font-size:13px;margin-top:8px;color:#374151;">Upload sheets below, then scan them all at once into the stock table.</div>
+      </div>
+    </div>
+    <div class="db-box">
+      <div class="db-head"><div><h2>Sheet photos</h2></div></div>
+      <div style="padding:18px 20px;">
+        <div class="report-row">
+          <button class="btn-small" style="margin-top:0;" onclick="document.getElementById('scanFiles').click()">📤 Upload sheet</button>
+          <input id="scanFiles" type="file" accept="image/*" multiple style="display:none;" onchange="uploadScans()" />
+          <input id="scanSearch" type="text" placeholder="Find item..." style="width:220px;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;" oninput="scanMatch()" />
+          <button class="btn-small" onclick="eraseAllScans()">🧹 Erase all</button>
+        </div>
+        <div class="report-row">
+          <label style="font-size:13px;font-weight:600;display:flex;gap:6px;align-items:center;">
+            <input type="checkbox" id="finalAsIs" checked style="width:auto;" /> Photo already cleared with external AI — use as final
+          </label>
+        </div>
+        <div style="font-size:13px;margin-top:6px;">
+          <div style="font-weight:700;color:#065f46;margin-bottom:4px;">Clear photos online with AI, then upload here:</div>
+          <div>1. <b>OpenPixels</b> — <a href="https://openpixels.app/?utm_source=chatgpt.com" target="_blank" rel="noopener">OpenPixels AI Photo Enhancer</a></div>
+          <div>2. <b>Pixelcut</b> — <a href="https://www.pixelcut.ai/image-upscaler/sharpen-image?utm_source=chatgpt.com" target="_blank" rel="noopener">Pixelcut AI Image Sharpener</a></div>
+          <div>3. <b>IObit AI Photo Enhancer</b> — <a href="https://www.iobit.com/en/ai-photo-enhancer.php?utm_source=chatgpt.com" target="_blank" rel="noopener">IObit AI Photo Enhancer</a></div>
+          <div>4. <b>Crisp Photos</b> — <a href="https://crisp.photos/?utm_source=chatgpt.com" target="_blank" rel="noopener">Crisp Photos AI Upscaler</a></div>
+        </div>
+        <div id="scanList" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;"></div>
+        <div id="latestBox" style="margin-top:12px;"></div>
+        <div id="scanResult" style="font-size:13px;margin-top:10px;color:#374151;"></div>
+      </div>
+    </div>
+    <div class="db-box" id="dlBox">
+      <div class="db-head"><div><h2>Downloaded documents</h2><span id="dlCount"></span></div></div>
+      <div style="padding:18px 20px;">
+        <div id="dlList" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
+        <h3 style="color:#065f46;margin:16px 0 8px;font-size:15px;">Verification records</h3>
+        <div id="verifyLog" style="font-size:13px;"></div>
+      </div>
+    </div>
+          <div class="db-box" id="checkBox">
+        <div class="db-head"><div><h2>Document Check - scan then verify</h2></div></div>
+        <div style="padding:18px 20px;">
+          <div class="report-row">
+            <label style="font-size:13px;font-weight:600;">Downloaded document:
+              <select id="checkDoc" style="min-width:220px;"></select>
+            </label>
+          </div>
+          <div class="report-row">
+            <button class="btn-green" onclick="checkScan()">1. Scan document</button>
+          </div>
+          <div class="report-row">
+            <button class="btn-small" onclick="checkVerify()">2. Verify scan</button>
+          </div>
+          <div id="checkOut" style="font-size:13px;margin-top:10px;color:#374151;"></div>
+        </div>
+      </div>
+<div class="db-box" id="phoneBox">
+      <div class="db-head"><div><h2>Phone scanner text — clear results</h2></div></div>
+      <div style="padding:18px 20px;">
+        <div style="font-size:13px;color:#374151;">1. Scan with a free document app below. 2. Copy the text. 3. Paste here and build the table.</div>
+        <div style="font-size:13px;margin-top:8px;">
+          <div style="font-weight:700;color:#065f46;margin-bottom:4px;">Free document-scanning apps:</div>
+          <div>• <b>Microsoft Lens</b> — best all-round free scanner; clean PDFs, receipts, notes, whiteboards</div>
+          <div>• <b>Adobe Scan</b> — automatic edge detection and PDF creation</div>
+          <div>• <b>Google Drive Scan</b> — scans straight into your Google Drive</div>
+          <div>• <b>Apple Notes</b> — free on iPhone/iPad with document detection</div>
+          <div>• <b>Genius Scan</b> — simple and reliable for basic scanning</div>
+        </div>
+        <textarea id="phoneText" placeholder="Paste scanned text here, one row per line..." style="width:100%;min-height:120px;margin-top:10px;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;"></textarea>
+        <button class="btn-small" onclick="buildFromPhone()">Build table from text</button>
+      </div>
+    </div>
+    <div class="db-box" id="foundBox" style="display:none;">
+      <div class="db-head">
+        <div><h2>Detected prices</h2></div>
+        <button class="btn-small" onclick="applyScanned()">Apply to stock table</button>
+      </div>
+      <table><thead><tr><th>Item</th><th>Scanned price</th><th>Database price</th></tr></thead><tbody id="foundRows"></tbody></table>
+    </div>
+    <div class="db-box" id="docBox" style="display:none;">
+      <div class="db-head">
+        <div><h2>Scanned document — full stock sheet</h2></div>
+        <div>
+          <button class="btn-small" onclick="rectifyMistakes()">Rectify mistakes</button>
+          <button class="btn-small" onclick="assureDoc()">Assure document</button>
+          <button class="btn-small" onclick="applyScanned()">Apply all to stock table</button>
+        </div>
+      </div>
+      <div style="padding:18px 20px;">
+        <div style="overflow:auto;"><table><thead><tr><th>No</th><th>Item</th><th>Opening</th><th>Add</th><th>Total</th><th>Closing</th><th>Sales</th><th>Price</th><th>Amount</th></tr></thead><tbody id="docRows"></tbody></table></div>
+        <div id="unparsed" style="font-size:12px;color:#6b7280;margin-top:10px;"></div>
+        <div id="mistakeReasons" style="font-size:13px;margin-top:10px;"></div>
+        <div id="assurance" style="font-size:13px;margin-top:10px;"></div>
+      </div>
+    </div>
+  </div>
+  <div class="view" id="view-scanned" style="display:none;">
+    <div class="sec-head"><div class="sec-icon">📑</div><div><h1 class="page-title">Scanned Data</h1>
+    <p class="page-sub">Every scanned document result. Data stays until you delete it.</p></div></div>
+    <div class="db-box">
+      <div class="db-head">
+        <div><h2>AI Thorough Check</h2><span id="sdAiCount" style="color:#6b7280;font-size:13px;"></span></div>
+        <div>
+          <button class="btn-small" onclick="aiCheckAll()">AI check all</button>
+          <button class="btn-small" onclick="rectifyAll()">Rectify all at once</button>
+        </div>
+      </div>
+      <div style="padding:18px 20px;">
+        <div id="aiReport" style="font-size:13px;">Checks the whole path from upload: formula errors, unattended and added mistakes.</div>
+      </div>
+    </div>
+    <div class="db-box">
+      <div class="db-head">
+        <div><h2>Scan results</h2><span id="scanCount" style="color:#6b7280;font-size:13px;"></span></div>
+        <div>
+          <label style="font-size:13px;font-weight:600;">View scan:
+            <select id="scanSelect" onchange="showScan()"></select>
+          </label>
+          <button class="btn-danger" onclick="deleteScan()">Delete this scan</button>
+        </div>
+      </div>
+      <div style="padding:18px 20px;">
+        <div id="scanMeta" style="font-size:13px;color:#6b7280;margin-bottom:10px;"></div>
+        <div style="overflow:auto;"><table>
+          <thead><tr><th>No</th><th>Item</th><th>Opening</th><th>Add</th><th>Total</th><th>Closing</th><th>Sales</th><th>Price</th><th>Amount</th></tr></thead>
+          <tbody id="dataRows"><tr><td colspan="9">No scans yet. Scan a sheet in Upload & Scan.</td></tr></tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+  <div class="view" id="view-cash" style="display:none;">
+    <div class="sec-head"><div class="sec-icon green">💰</div><div><h1 class="page-title">Cash Reconciliation</h1>
+    <p class="page-sub">Expected revenue vs counted cash + Mpesa, per day.</p></div></div>
+    <div class="card form-card">
+      <h3>Count for <span id="cashDateLabel"></span></h3>
+      <div class="row2">
+        <div><label>Date</label><input type="date" id="cashDate" onchange="loadCashDay()" /></div>
+        <div><label>Expected revenue (auto)</label><input id="cashExpected" type="number" readonly style="background:#f5f5f4;" /></div>
+      </div>
+      <div class="row2">
+        <div><label>Cash counted</label><input id="cashCounted" type="number" min="0" oninput="calcCash()" /></div>
+        <div><label>Mpesa received</label><input id="cashMpesa" type="number" min="0" oninput="calcCash()" /></div>
+      </div>
+      <div class="formula" id="cashDiff">Difference: –</div>
+      <div class="row2">
+            <div><label>Handed over by</label><input id="cashBy" type="text" placeholder="Staff name" /></div>
+            <div><label>Received by</label><input id="cashTo" type="text" placeholder="Next shift / manager" /></div>
+          </div>
+          <label>Shift note</label>
+          <input id="cashNote" type="text" placeholder="Optional note" />
+          <button class="btn-small" onclick="saveCash()">Save reconciliation</button>
+    </div>
+    <div class="card">
+      <h3>History</h3>
+      <div style="overflow:auto;"><table style="min-width:0;"><thead><tr><th>Date</th><th>Expected</th><th>Cash</th><th>Mpesa</th><th>Difference</th><th>Handover</th><th>Status</th></tr></thead><tbody id="cashRows"></tbody></table></div>
+    </div>
+  </div>
+  <div class="view" id="view-debts" style="display:none;">
+    <div class="sec-head"><div class="sec-icon rose">📒</div><div><h1 class="page-title">Debts & Credit</h1>
+    <p class="page-sub">Staff and customer IOUs. Total owed: <b id="debtTotal">0</b></p></div></div>
+    <div class="card form-card">
+      <h3>Add debt</h3>
+      <div class="row2">
+        <div><label>Name</label><input id="debtName" type="text" placeholder="Who owes?" /></div>
+        <div><label>Item</label><input id="debtItem" list="drinkNames" type="text" placeholder="Drink (optional)" /></div>
+      </div>
+      <div class="row2">
+        <div><label>Amount</label><input id="debtAmount" type="number" min="0" /></div>
+        <div><label>Date</label><input id="debtDate" type="date" /></div>
+      </div>
+      <button class="btn-small" onclick="addDebt()">Add debt</button>
+    </div>
+    <div class="card">
+      <h3>Outstanding</h3>
+      <div style="overflow:auto;"><table style="min-width:0;"><thead><tr><th>Name</th><th>Item</th><th>Amount</th><th>Date</th><th>Action</th></tr></thead><tbody id="debtRows"></tbody></table></div>
+    </div>
+  </div>
+  <div class="view" id="view-orders" style="display:none;">
+    <div class="sec-head"><div class="sec-icon blue">📦</div><div><h1 class="page-title">Restock Orders</h1>
+    <p class="page-sub">Generated from latest closings. Reorder at or below: <input id="reorderLevel" type="number" min="0" value="5" style="width:70px;padding:6px;border:1.5px solid #e5e7eb;border-radius:8px;" onchange="genOrders()" /> · Target stock: <input id="targetStock" type="number" min="0" value="24" style="width:70px;padding:6px;border:1.5px solid #e5e7eb;border-radius:8px;" onchange="genOrders()" /></p></div></div>
+    <div class="card">
+      <h3>Order list <span id="orderTotal" style="color:#6b7280;font-size:13px;"></span></h3>
+      <div class="report-row">
+        <label style="font-size:13px;font-weight:600;">Supplier:
+              <input id="orderSupplier" list="supplierNames" type="text" placeholder="Supplier name" style="width:180px;" />
+            </label>
+            <datalist id="supplierNames"></datalist>
+            <button class="btn-small" onclick="genOrders()">Generate from closings</button>
+        <button class="btn-green" onclick="saveOrder()">Save order</button>
+      </div>
+      <div style="overflow:auto;"><table style="min-width:0;"><thead><tr><th>Item</th><th>Closing</th><th>Order qty</th><th>Est. cost</th></tr></thead><tbody id="orderRows"><tr><td colspan="4">Press Generate.</td></tr></tbody></table></div>
+    </div>
+    <div class="card">
+      <h3>Saved orders</h3>
+      <div style="overflow:auto;"><table style="min-width:0;"><thead><tr><th>Date</th><th>Supplier</th><th>Lines</th><th>Est. cost</th><th>Status</th><th>Action</th></tr></thead><tbody id="orderHist"></tbody></table></div>
+    </div>
+  </div>
+  <div class="view" id="view-wastage" style="display:none;">
+    <div class="sec-head"><div class="sec-icon rose">🗑️</div><div><h1 class="page-title">Breakage & Wastage</h1>
+    <p class="page-sub">Spoilage, breakage, spillage. Month loss: <b id="wasteTotal">0</b></p></div></div>
+    <div class="card form-card">
+      <h3>Record loss</h3>
+      <div class="row2">
+        <div><label>Item</label><input id="wasteItem" list="drinkNames" type="text" placeholder="Drink" /></div>
+        <div><label>Qty</label><input id="wasteQty" type="number" min="0" /></div>
+      </div>
+      <div class="row2">
+        <div><label>Reason</label><select id="wasteReason"><option>Breakage</option><option>Spillage</option><option>Expired</option><option>Theft suspected</option><option>Other</option></select></div>
+        <div><label>Date</label><input id="wasteDate" type="date" /></div>
+      </div>
+      <button class="btn-small" onclick="addWaste()">Record</button>
+    </div>
+    <div class="card">
+      <h3>Log</h3>
+      <div style="overflow:auto;"><table style="min-width:0;"><thead><tr><th>Item</th><th>Qty</th><th>Reason</th><th>Date</th><th>Action</th></tr></thead><tbody id="wasteRows"></tbody></table></div>
+    </div>
+  </div>
+  <div class="view" id="view-settings" style="display:none;">
+    <div class="sec-head"><div class="sec-icon dark">⚙️</div><div><h1 class="page-title">Settings</h1>
+    <p class="page-sub">Staff admin, emails, passwords and strong-password tools.</p></div></div>
+    <div class="card" style="display:flex;gap:10px;flex-wrap:wrap;">
+      <a href="#email-settings" style="font-weight:700;color:#065f46;text-decoration:none;">📧 Email Settings</a>
+      <span style="color:#9ca3af;">|</span>
+      <a href="#password-settings" style="font-weight:700;color:#065f46;text-decoration:none;">🔑 Password Settings</a>
+    </div>
+    <div id="email-settings">
+      <div class="card form-card">
+        <h3>Email Settings — Admin account</h3>
+        <div class="row2">
+          <div><label>Admin email</label><input id="adminEmail" type="email" placeholder="admin@nancysystem.com" /></div>
+          <div><label>New admin password</label><input id="adminPass" type="password" placeholder="••••••••" oninput="checkStrength('adminPass','adminMeter','adminText')" /></div>
+        </div>
+        <div class="meter"><div id="adminMeter"></div></div>
+        <div id="adminText"></div>
+        <button class="btn-small" onclick="saveAdmin()">Save admin</button>
+      </div>
+      <div class="card form-card">
+        <h3>Add staff</h3>
+        <div class="row2">
+          <div><label>Staff name</label><input id="staffName" type="text" placeholder="e.g. Mary" /></div>
+          <div><label>Staff email</label><input id="staffEmail" type="email" placeholder="staff@example.com" /></div>
+        </div>
+        <label>Staff password</label>
+        <input id="staffPass" type="password" placeholder="••••••••" oninput="checkStrength('staffPass','staffMeter','staffText')" />
+        <div class="meter"><div id="staffMeter"></div></div>
+        <div id="staffText"></div>
+        <div class="hint">Strong password needs 8+ chars, upper + lower case, number and symbol.</div>
+        <button class="btn-small" onclick="generatePass('staffPass')">Generate strong password</button>
+        <button class="btn-small" onclick="addStaff()">Add staff</button>
+      </div>
+      <div class="card">
+        <h3>Staff list</h3>
+        <table style="min-width:0;"><thead><tr><th>Name</th><th>Email</th><th>Action</th></tr></thead><tbody id="staffRows"></tbody></table>
+      </div>
+      <div class="card form-card">
+        <h3>Email Settings — System emails</h3>
+        <div class="row2">
+          <div><label>System sender email</label><input id="sysEmail" type="email" placeholder="noreply@nancysystem.com" /></div>
+          <div><label>Alerts recipient email</label><input id="alertEmail" type="email" placeholder="manager@example.com" /></div>
+        </div>
+        <div class="hint">Used for password-reset messages and low-stock alerts.</div>
+        <button class="btn-small" onclick="saveEmailSettings()">Save email settings</button>
+      </div>
+    </div>
+    <div id="password-settings">
+      <div class="card form-card">
+        <h3>Password Settings — Reset staff password</h3>
+        <label>Staff email</label>
+        <select id="resetStaffEmail"></select>
+        <label>New password</label>
+        <input id="resetStaffPass" type="password" placeholder="••••••••" />
+        <button class="btn-small" onclick="generatePass('resetStaffPass')">Generate strong password</button>
+        <button class="btn-small" onclick="resetStaffPassword()">Reset password</button>
+      </div>
+      <div class="card form-card">
+        <h3>Password Settings — Strong password generator</h3>
+        <label>Generated password</label>
+        <input id="genOut" type="text" readonly />
+        <button class="btn-small" onclick="generatePass('genOut')">Generate</button>
+        <button class="btn-small" onclick="copyGen()">Copy</button>
+      </div>
+      <div class="card form-card">
+        <h3>💾 Backup & Restore</h3>
+        <div class="hint">Downloads everything (stock days, scans, staff, cash, debts, orders, wastage) as one file. Restore it on this or another device.</div>
+        <button class="btn-small" onclick="exportBackup()">Download backup</button>
+        <label>Restore from file</label>
+        <input id="backupFile" type="file" accept=".json" onchange="importBackup()" />
+      </div>
+    </div>
+  </div>
+</main>
+<footer class="sysfoot">Made with care for <b>Nancy&apos;s System</b> — precious stock control, sparkling daily</footer>
+</div>
+<div id="toast"></div>
+<div id="imgModal" onclick="if(event.target===this)closeModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);place-items:center;z-index:50;padding:20px;">
+  <div style="background:white;border-radius:14px;padding:16px;max-width:95%;max-height:95%;overflow:auto;text-align:center;">
+    <div id="modalCap" style="font-size:13px;font-weight:600;margin-bottom:8px;"></div>
+    <img id="modalImg" alt="" style="max-width:100%;border-radius:8px;" />
+    <div><button class="btn-small" onclick="closeModal()">✕ Close</button></div>
+  </div>
+</div>
+<script src="drinks.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+<script>
+  (function oceanLife() {
+    try {
+      const sea = document.getElementById('ocean');
+      if (!sea) return;
+      try {
+        const vids = ['assets/ocean-bg.webm', 'assets/ocean-bg.mp4', 'https://upload.wikimedia.org/wikipedia/commons/2/24/Tropical_Fish_Banner_Fish_on_Coral_Reef.webm'];
+        const vid = document.getElementById('oceanVideo');
+        const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (vid && !reduced) {
+          (function trySrc(i) {
+            if (i >= vids.length) { vid.remove(); return; }
+            vid.src = vids[i];
+            vid.play().catch(() => trySrc(i + 1));
+          })(0);
+        } else if (vid) { vid.remove(); }
+      } catch {}
+      const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const photos = ['assets/fish1.jpg', 'assets/fish2.jpg', 'assets/fish3.jpg', 'assets/fish4.jpg'];
+      const W = () => sea.clientWidth || window.innerWidth || 800;
+      const H = () => sea.clientHeight || window.innerHeight || 600;
+      const fishes = [];
+      for (let i = 0; i < 8; i++) {
+        const f = document.createElement('span');
+        f.className = 'fish live';
+        const img = document.createElement('img');
+        img.src = photos[i % photos.length];
+        img.alt = '';
+        const size = 95 + ((i * 53) % 80);
+        img.style.width = size + 'px';
+        img.style.height = size + 'px';
+        f.appendChild(img);
+        const dir = (i % 2 === 0) ? 1 : -1;
+        const fish = {
+          el: f, img, size,
+          x: Math.random() * W(), y: H() * 0.05 + Math.random() * H() * 0.85,
+          vx: dir * (0.9 + Math.random() * 1.4), vy: (Math.random() - 0.5) * 0.8,
+          mode: 'cruise', t: 60 + Math.random() * 200, ang: Math.random() * 6.28,
+          bubbleT: Math.random() * 50, rippleT: 150 + Math.random() * 250, foe: null
+        };
+        f.style.opacity = (0.68 + ((i * 29) % 30) / 100).toFixed(2);
+        flip(fish);
+        sea.appendChild(f);
+        fishes.push(fish);
+      }
+      if (reduced) { placeAll(); return; }
+      let last = performance.now();
+      requestAnimationFrame(function swim(now) {
+        const dt = Math.min(50, now - last);
+        last = now;
+        const k = dt / 16.7;
+        fishes.forEach(f => stepFish(f, k));
+        requestAnimationFrame(swim);
+      });
+      function flip(f) { f.img.style.transform = f.vx >= 0 ? 'scaleX(1)' : 'scaleX(-1)'; }
+      function placeAll() {
+        fishes.forEach(f => { f.el.style.transform = 'translate(' + f.x + 'px,' + f.y + 'px)'; });
+      }
+      function spawnBubble(x, y) {
+        if (sea.childElementCount > 90) return;
+        const b = document.createElement('span');
+        b.className = 'bubble trail';
+        const s = 3 + Math.random() * 6;
+        b.style.width = s + 'px'; b.style.height = s + 'px';
+        b.style.left = x + 'px'; b.style.top = y + 'px';
+        sea.appendChild(b);
+        setTimeout(() => b.remove(), 3800);
+      }
+      function spawnRipple(x, y, s) {
+        if (sea.childElementCount > 90) return;
+        const r = document.createElement('span');
+        r.className = 'ripple';
+        const d = s * 1.7;
+        r.style.width = d + 'px'; r.style.height = (d * 0.45) + 'px';
+        r.style.left = (x - d / 2) + 'px'; r.style.top = (y - d * 0.22) + 'px';
+        sea.appendChild(r);
+        setTimeout(() => r.remove(), 2600);
+      }
+      function nearest(f) {
+        let best = null, bd = 1e9;
+        fishes.forEach(o => {
+          if (o === f) return;
+          const dd = (o.x - f.x) * (o.x - f.x) + (o.y - f.y) * (o.y - f.y);
+          if (dd < bd) { bd = dd; best = o; }
+        });
+        return { fish: best, dist: Math.sqrt(bd) };
+      }
+      function stepFish(f, k) {
+        f.t -= k;
+        const sp = Math.hypot(f.vx, f.vy) || 1;
+        if (f.mode === 'cruise') {
+          f.vy += Math.sin(f.ang += 0.02 * k) * 0.02 * k;
+          const near = nearest(f);
+          if (near.fish && near.dist < 130 && Math.random() < 0.02 * k) {
+            f.mode = 'spar'; f.foe = near.fish; f.t = 200;
+          } else if (f.t <= 0) {
+            if (Math.random() < 0.5) { f.mode = 'play'; f.t = 150 + Math.random() * 150; }
+            else { f.mode = 'dart'; f.t = 40 + Math.random() * 40; const b = 2.4 + Math.random() * 1.6; f.vx *= b; f.vy *= b; }
+          }
+        } else if (f.mode === 'play') {
+          f.ang += 0.06 * k;
+          const s = 0.7;
+          f.vx += (Math.cos(f.ang) * s - f.vx) * 0.05 * k;
+          f.vy += (Math.sin(f.ang) * s * 0.6 - f.vy) * 0.05 * k;
+          if (Math.random() < 0.01 * k) spawnBubble(f.x, f.y);
+          if (f.t <= 0) { f.mode = 'cruise'; f.t = 120 + Math.random() * 200; }
+        } else if (f.mode === 'dart') {
+          if (f.t <= 0 || sp < 0.6) { f.mode = 'cruise'; f.t = 120 + Math.random() * 200; }
+        } else if (f.mode === 'spar') {
+          const foe = f.foe && fishes.includes(f.foe) ? f.foe : nearest(f).fish;
+          if (!foe || f.t <= 0) { f.mode = 'cruise'; f.t = 150; f.foe = null; }
+          else {
+            const dx = foe.x - f.x, dy = foe.y - f.y, dd = Math.hypot(dx, dy) || 1;
+            if (dd < 70) {
+              spawnRipple((f.x + foe.x) / 2, (f.y + foe.y) / 2, f.size);
+              spawnBubble(f.x, f.y); spawnBubble(foe.x, foe.y);
+              f.vx = -dx / dd * 3; f.vy = -dy / dd * 3;
+              f.mode = 'dart'; f.t = 60; f.foe = null;
+            } else {
+              f.vx += (dx / dd * 2.2 - f.vx) * 0.08 * k;
+              f.vy += (dy / dd * 2.2 - f.vy) * 0.08 * k;
+            }
+          }
+        }
+        f.x += f.vx * k;
+        f.y += f.vy * k;
+        const m = 30, w = W(), hh = H();
+        if (f.x < -m) { f.x = -m; f.vx = Math.abs(f.vx); }
+        if (f.x > w + m) { f.x = w + m; f.vx = -Math.abs(f.vx); }
+        if (f.y < -m) { f.y = -m; f.vy = Math.abs(f.vy); }
+        if (f.y > hh + m) { f.y = hh + m; f.vy = -Math.abs(f.vy); }
+        const cur = Math.hypot(f.vx, f.vy);
+        if (cur > 4) { f.vx *= 4 / cur; f.vy *= 4 / cur; }
+        flip(f);
+        f.el.style.transform = 'translate(' + f.x + 'px,' + f.y + 'px)';
+        if (--f.bubbleT <= 0) {
+          f.bubbleT = 40 + Math.random() * 60;
+          spawnBubble(f.x - (f.vx >= 0 ? f.size / 2 : -f.size / 2), f.y);
+        }
+        if (--f.rippleT <= 0) {
+          f.rippleT = 250 + Math.random() * 350;
+          spawnRipple(f.x, f.y, f.size);
+        }
+      }
+    } catch {}
+  })();
+  let idleTimer = null;
+  function goIdle() { document.body.classList.add('idle'); }
+  function wakeIdle() {
+    if (document.body.classList.contains('idle')) document.body.classList.remove('idle');
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(goIdle, 120000);
+  }
+  ['mousemove', 'mousedown', 'keydown', 'touchstart', 'click'].forEach(e => window.addEventListener(e, wakeIdle, { passive: true }));
+  window.addEventListener('scroll', wakeIdle, { passive: true, capture: true });
+  wakeIdle();
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._h);
+    t._h = setTimeout(() => t.classList.remove('show'), 2600);
+  }
+  let currentSection = 'dashboard';
+  function showSection(id, skipHash) {
+    try {
+      currentSection = id;
+      document.querySelectorAll('main .view').forEach(v => v.style.display = 'none');
+      const el = document.getElementById('view-' + id);
+      if (el) el.style.display = '';
+      document.querySelectorAll('#tabs button[data-sec]').forEach(a => a.classList.toggle('active', a.getAttribute('data-sec') === id));
+      if (!skipHash) { try { location.hash = id; } catch {} }
+      window.scrollTo(0, 0);
+      if (id === 'reports' && typeof updateCharts === 'function') { try { updateCharts(); } catch {} }
+    } catch (e) { console.error(e); }
+  }
+  window.addEventListener('load', () => {
+    const h = (location.hash || '').replace('#', '');
+    showSection(document.getElementById('view-' + h) ? h : 'dashboard', true);
+  });
+  const LS_KEY = 'nancy_stock_days';
+  const SCAN_KEY = 'nancy_scans';
+  const PENDING_KEY = 'nancy_pending_prices';
+  const DRAFT_KEY = 'nancy_draft';
+  const STAFF_KEY = 'nancy_staff', ADMIN_KEY = 'nancy_admin', AUTH_KEY = 'nancy_auth', EMAIL_KEY = 'nancy_email_settings';
+  const CLEARITY = 1.6;
+  function loadDays() { try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch { return {}; } }
+  function storeDays(d) { try { localStorage.setItem(LS_KEY, JSON.stringify(d)); } catch {} }
+  function loadDocs() { try { return JSON.parse(localStorage.getItem('nancy_scanned_docs')) || []; } catch { return []; } }
+  function saveDocs(d) { try { localStorage.setItem('nancy_scanned_docs', JSON.stringify(d)); } catch {} }
+  function docISO(doc) {
+    if (doc.iso) return doc.iso;
+    const dt = new Date((doc.date || '').replace(/\s*\(rectified\)\s*$/, ''));
+    if (isNaN(dt)) return '';
+    return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+  }
+  function docLabel(doc) {
+    const iso = docISO(doc);
+    return (iso || doc.date || 'undated') + (/rectified/i.test(doc.date || '') ? ' (rectified)' : '');
+  }
+  function saveScanDoc(rows, unparsed, rectified) {
+    try {
+      const now = new Date();
+      const iso = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+      const docs = loadDocs();
+      docs.push({ iso, date: now.toLocaleString() + (rectified ? ' (rectified)' : ''), rows, unparsed: (unparsed || []).slice(0, 50) });
+      saveDocs(docs);
+    } catch {}
+  }
+  function loadScans() { try { return JSON.parse(localStorage.getItem(SCAN_KEY)) || []; } catch { return []; } }
+  function storeScans(s) { try { localStorage.setItem(SCAN_KEY, JSON.stringify(s)); } catch {} }
+  function getAuth() { try { return JSON.parse(localStorage.getItem(AUTH_KEY)) || {}; } catch { return {}; } }
+  function setAuth(a) { try { localStorage.setItem(AUTH_KEY, JSON.stringify(a)); } catch {} }
+  function loadStaff() { try { return JSON.parse(localStorage.getItem(STAFF_KEY)) || []; } catch { return []; } }
+  function saveStaff(s) { try { localStorage.setItem(STAFF_KEY, JSON.stringify(s)); } catch {} }
+  try {
+    const user = sessionStorage.getItem('nancy_user') || localStorage.getItem('nancy_user');
+    if (user) document.getElementById('welcome').textContent = 'Welcome, ' + user;
+  } catch {}
+  let allDrinks = (typeof ALL_DRINKS !== 'undefined') ? ALL_DRINKS : [];
+  if (allDrinks.length > 0) { safeBoot(); }
+  else {
+    fetch('drinks.json').then(r => r.json()).then(data => { allDrinks = data; safeBoot(); }).catch(() => {
+      document.getElementById('drinkRows').innerHTML = '<tr><td colspan="9">Could not load drinks database</td></tr>';
+      document.getElementById('drinkTotal').textContent = 'Database not loaded';
+    });
+  }
+  function safeBoot() {
+    try { bootDrinks(); } catch (e) { console.error('bootDrinks', e); }
+    try { bootReports(); } catch (e) { console.error('bootReports', e); }
+    try { bootScans(); } catch (e) { console.error('bootScans', e); }
+    try { bootSettings(); } catch (e) { console.error('bootSettings', e); }
+    try { bootCash(); } catch (e) { console.error('bootCash', e); }
+    try { bootDebts(); } catch (e) { console.error('bootDebts', e); }
+    try { bootOrders(); } catch (e) { console.error('bootOrders', e); }
+    try { bootWaste(); } catch (e) { console.error('bootWaste', e); }
+    try { bootSales(); } catch (e) { console.error('bootSales', e); }
+    try { bootExpenses(); } catch (e) { console.error('bootExpenses', e); }
+    try { updateStats(); } catch (e) { console.error('updateStats', e); }
+  }
+  function bootSettings() { try { settingsInit(); } catch (e) { console.error('bootSettings', e); } }
+  function updateStats() {
+    try {
+      document.getElementById('statDrinks').textContent = allDrinks.length;
+      const src = reportSource();
+      const keys = Object.keys(src).sort();
+      document.getElementById('statDays').textContent = keys.length;
+      document.getElementById('statScans').textContent = loadDocs().length;
+      document.getElementById('statStaff').textContent = loadStaff().length;
+      const today = new Date().toISOString().slice(0, 10);
+      const sales = (loadSales()[today] || []).reduce((a, s) => a + (+s.amount || 0), 0);
+      const exps = loadExpenses().filter(e => (e.date || '').indexOf(today) === 0).reduce((a, e) => a + (+e.amount || 0), 0);
+      document.getElementById('statSales').textContent = sales;
+      document.getElementById('statProfit').textContent = sales - exps;
+      const box = document.getElementById('lowStock');
+      if (!keys.length) { box.innerHTML = 'Save days to activate the watch.'; return; }
+      const last = src[keys[keys.length - 1]].closing || {};
+      const low = allDrinks.filter(d => last[d.id] !== undefined && +last[d.id] <= 5).slice(0, 10);
+      box.innerHTML = low.length
+        ? 'Closing at 5 or below on ' + keys[keys.length - 1] + ': ' + low.map(d => '<b>' + d.name + '</b> (' + last[d.id] + ')').join(', ')
+        : 'All stocked items above 5 on ' + keys[keys.length - 1] + '.';
+    } catch {}
+  }
+  function bootDrinks() {
+    applyPriceOverrides();
+    renderDrinks(allDrinks);
+    document.getElementById('drinkTotal').textContent = allDrinks.length + ' items in stock sheet';
+    document.getElementById('repDate').value = new Date().toISOString().slice(0, 10);
+    applyPendingPrices();
+  }
+  function num(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+  function calcRow(row) {
+    const opening = num(row.querySelector('.c-open').value);
+    const add = num(row.querySelector('.c-add').value);
+    const closing = num(row.querySelector('.c-close').value);
+    const price = num(row.querySelector('.c-price').value);
+    const total = opening + add;
+    const sales = total - closing;
+    row.querySelector('.c-total').textContent = total;
+    row.querySelector('.c-sales').textContent = sales;
+    row.querySelector('.c-amount').textContent = sales * price;
+  }
+  let draftTimer = null;
+  document.getElementById('drinkRows').addEventListener('input', e => {
+    const row = e.target.closest('tr');
+    if (!row) return;
+    if (e.target.classList.contains('item-input')) autofillPrice(row);
+    calcRow(row);
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(saveDraft, 800);
+  });
+  function saveDraft() {
+    try {
+      const d = {};
+      document.querySelectorAll('#drinkRows tr[data-id]').forEach(row => {
+        const id = row.getAttribute('data-id');
+        const v = {
+          o: row.querySelector('.c-open').value,
+          a: row.querySelector('.c-add').value,
+          c: row.querySelector('.c-close').value,
+          p: row.querySelector('.c-price').value
+        };
+        if (v.o || v.a || v.c) d[id] = v;
+      });
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(d));
+    } catch {}
+  }
+  function restoreDraft() {
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(DRAFT_KEY)); } catch {}
+    if (!d) return;
+    document.querySelectorAll('#drinkRows tr[data-id]').forEach(row => {
+      const v = d[row.getAttribute('data-id')];
+      if (!v) return;
+      if (v.o) row.querySelector('.c-open').value = v.o;
+      if (v.a) row.querySelector('.c-add').value = v.a;
+      if (v.c) row.querySelector('.c-close').value = v.c;
+      if (v.p) row.querySelector('.c-price').value = v.p;
+      calcRow(row);
+    });
+  }
+  function clearDraft(ask) {
+    if (ask && !confirm('Clear the auto-saved draft entries?')) return;
+    try { localStorage.removeItem(DRAFT_KEY); } catch {}
+    toast('Draft cleared.');
+  }
+  function autofillPrice(row) {
+    const inp = row.querySelector('.item-input');
+    if (!inp) return;
+    const q = inp.value.trim().toLowerCase();
+    if (!q) return;
+    const match = allDrinks.find(d => d.name.toLowerCase() === q);
+    if (match && (match.price !== null && match.price !== undefined)) row.querySelector('.c-price').value = match.price;
+  }
+  function renderDrinks(list) {
+    document.getElementById('dbCount').textContent = list.length + ' records + 9 blank rows';
+    let html = list.map(d => '<tr data-id="' + d.id + '">' +
+      '<td>' + d.id + '</td><td>' + d.name + '</td>' +
+      '<td><input class="c-open" type="number" min="0" /></td>' +
+      '<td><input class="c-add" type="number" min="0" /></td>' +
+      '<td class="calc c-total">0</td>' +
+      '<td><input class="c-close" type="number" min="0" /></td>' +
+      '<td class="calc c-sales">0</td>' +
+      '<td><input class="c-price" type="number" min="0" value="' + (d.price === null || d.price === undefined ? '' : d.price) + '" /></td>' +
+      '<td class="calc c-amount">0</td></tr>').join('');
+    for (let i = 1; i <= 9; i++) {
+      html += '<tr><td></td><td><input class="item-input" list="drinkNames" type="text" placeholder="Type item name..." /></td>' +
+        '<td><input class="c-open" type="number" min="0" /></td>' +
+        '<td><input class="c-add" type="number" min="0" /></td>' +
+        '<td class="calc c-total">0</td><td><input class="c-close" type="number" min="0" /></td>' +
+        '<td class="calc c-sales">0</td><td><input class="c-price" type="number" min="0" /></td>' +
+        '<td class="calc c-amount">0</td></tr>';
+    }
+    document.getElementById('drinkRows').innerHTML = html;
+    document.getElementById('drinkNames').innerHTML = allDrinks.map(d => '<option value="' + d.name + '">').join('');
+    restoreDraft();
+  }
+  function filterDrinks() {
+    const q = document.getElementById('search').value.toLowerCase();
+    renderDrinks(allDrinks.filter(d => d.name.toLowerCase().includes(q) || String(d.id) === q));
+  }
+  function applyPendingPrices() {
+    let pending = null;
+    try { pending = JSON.parse(localStorage.getItem('nancy_pending_prices')); } catch {}
+    if (!pending) return;
+    let applied = 0;
+    document.querySelectorAll('#drinkRows tr[data-id]').forEach(row => {
+      const id = row.getAttribute('data-id');
+      const p = pending[id];
+      if (p === undefined || p === '') return;
+      if (typeof p === 'object') {
+        if (p.price !== undefined && p.price !== '') row.querySelector('.c-price').value = p.price;
+        if (p.opening !== undefined && p.opening !== '') row.querySelector('.c-open').value = p.opening;
+        if (p.add !== undefined && p.add !== '') row.querySelector('.c-add').value = p.add;
+        if (p.closing !== undefined && p.closing !== '') row.querySelector('.c-close').value = p.closing;
+      } else { row.querySelector('.c-price').value = p; }
+      calcRow(row); applied++;
+    });
+    localStorage.removeItem('nancy_pending_prices');
+    if (applied) toast('Applied ' + applied + ' scanned rows.');
+  }
+  function seedDemo(force) {
+    const days = loadDays();
+    if (!force && Object.keys(days).length > 0) { toast('Real days exist — sample not loaded.'); return; }
+    if (allDrinks.length === 0) return;
+    for (let i = 6; i >= 0; i--) {
+      const dt = new Date(); dt.setDate(dt.getDate() - i);
+      const key = dt.toISOString().slice(0, 10);
+      if (!force && days[key]) continue;
+      const opening = {}, closing = {};
+      allDrinks.slice(0, 30).forEach(d => {
+        const base = 10 + (d.id % 35);
+        opening[d.id] = base + (i % 5);
+        closing[d.id] = Math.max(0, base - i - (d.id % 7));
+      });
+      days['demo-' + key] = { opening, closing };
+    }
+    storeDays(days);
+    bootReports();
+    updateStats();
+    toast('Sample week loaded (demo- days). Wipe with Clear demo in Reports.');
+  }
+  function clearDemo() {
+    const days = loadDays();
+    Object.keys(days).forEach(k => { if (k.indexOf('demo-') === 0) delete days[k]; });
+    storeDays(days);
+    bootReports();
+    updateStats();
+    toast('Sample data wiped.');
+  }
+  function saveDay() {
+    const date = document.getElementById('repDate').value || new Date().toISOString().slice(0, 10);
+    const days = loadDays();
+    const opening = {}, closing = {};
+    document.querySelectorAll('#drinkRows tr[data-id]').forEach(row => {
+      const id = row.getAttribute('data-id');
+      const o = parseFloat(row.querySelector('.c-open').value);
+      const c = parseFloat(row.querySelector('.c-close').value);
+      if (!isNaN(o)) opening[id] = o;
+      if (!isNaN(c)) closing[id] = c;
+    });
+    days[date] = { opening, closing };
+    storeDays(days);
+    updateStats();
+    toast('Saved ' + date + '.');
+  }
+  let chO = null, chC = null, chD = null, rp1 = null, rp2 = null, rp3 = null;
+  function bootReports() {
+    const days = reportSource();
+    const keys = Object.keys(days).sort();
+    const sel = document.getElementById('daySelect');
+    sel.innerHTML = keys.map(k => '<option>' + k + '</option>').join('');
+    if (keys.length) sel.value = keys[keys.length - 1];
+    document.getElementById('repCount').textContent = keys.length + ' days (Drinks saves + scans)';
+    updateCharts();
+  }
+  function updateCharts() {
+    if (typeof Chart === 'undefined') return;
+    const days = reportSource();
+    const keys = Object.keys(days).sort();
+    if (!keys.length) return;
+    const selDay = document.getElementById('daySelect').value || keys[keys.length - 1];
+    const top = allDrinks.slice(0, 15);
+    const labels = top.map(d => d.name);
+    const openVals = top.map(d => (days[selDay] && days[selDay].opening[d.id]) || 0);
+    const closeVals = top.map(d => (days[selDay] && days[selDay].closing[d.id]) || 0);
+    const dailyOpen = keys.map(k => Object.values(days[k].opening || {}).reduce((a, b) => a + (+b || 0), 0));
+    const dailyClose = keys.map(k => Object.values(days[k].closing || {}).reduce((a, b) => a + (+b || 0), 0));
+    if (chO) chO.destroy(); if (chC) chC.destroy(); if (chD) chD.destroy();
+    chO = new Chart(document.getElementById('chOpening'), { type: 'bar',
+      data: { labels, datasets: [{ label: 'Opening ' + (selDay || ''), data: openVals, backgroundColor: '#059669' }] }, options: { responsive: true } });
+    chC = new Chart(document.getElementById('chClosing'), { type: 'line',
+      data: { labels, datasets: [{ label: 'Closing ' + (selDay || ''), data: closeVals, borderColor: '#d97706', fill: false, tension: 0.3 }] }, options: { responsive: true } });
+    chD = new Chart(document.getElementById('chDaily'), { type: 'bar',
+      data: { labels: keys, datasets: [
+        { label: 'Opening total', data: dailyOpen, backgroundColor: '#059669' },
+        { label: 'Closing total', data: dailyClose, backgroundColor: '#d97706' } ] }, options: { responsive: true } });
+  }
+  function scannedAsDays() {
+    const map = {};
+    loadDocs().forEach(doc => {
+      const key = docISO(doc);
+      if (!key) return;
+      const opening = {}, closing = {};
+      (doc.rows || []).forEach(r => {
+        if (r.opening !== '' && r.opening !== undefined) opening[r.id] = +r.opening;
+        if (r.closing !== '' && r.closing !== undefined) closing[r.id] = +r.closing;
+      });
+      if (!map[key]) map[key] = { opening: {}, closing: {} };
+      Object.assign(map[key].opening, opening);
+      Object.assign(map[key].closing, closing);
+    });
+    return map;
+  }
+  function reportSource() { return Object.assign(loadDays(), scannedAsDays()); }
+  function togglePeriod() {
+    const t = document.getElementById('repType').value;
+    document.getElementById('weekWrap').style.display = t === 'week' ? '' : 'none';
+    document.getElementById('monthWrap').style.display = t === 'month' ? '' : 'none';
+  }
+  function periodDays() {
+    const t = document.getElementById('repType').value;
+    const days = [];
+    if (t === 'week') {
+      const s = document.getElementById('weekStart').value;
+      if (!s) { alert('Pick a week start date.'); return null; }
+      const d0 = new Date(s + 'T00:00:00');
+      for (let i = 0; i < 7; i++) { const d = new Date(d0); d.setDate(d0.getDate() + i); days.push(d.toISOString().slice(0, 10)); }
+    } else {
+      const m = document.getElementById('repMonth').value;
+      if (!m) { alert('Pick a month.'); return null; }
+      const parts = m.split('-'), y = +parts[0], mo = +parts[1];
+      const n = new Date(y, mo, 0).getDate();
+      for (let i = 1; i <= n; i++) days.push(m + '-' + String(i).padStart(2, '0'));
+    }
+    return days;
+  }
+  function genReport() {
+    const period = periodDays();
+    if (!period) return;
+    const days = reportSource();
+    const t = document.getElementById('repType').value;
+    const label = t === 'week' ? 'Weekly Report ' + period[0] + ' → ' + period[6] : 'Monthly Report ' + document.getElementById('repMonth').value;
+    const items = allDrinks.length ? allDrinks : [];
+    const sum = arr => arr.reduce((a, b) => a + (+b || 0), 0);
+    const dayClose = period.map(k => sum(Object.values((days[k] || {}).closing || {})));
+    const dayOpen = period.map(k => sum(Object.values((days[k] || {}).opening || {})));
+    const totOpen = {}, totClose = {};
+    items.forEach(d => {
+      totOpen[d.id] = sum(period.map(k => +(((days[k] || {}).opening || {})[d.id] || 0)));
+      totClose[d.id] = sum(period.map(k => +(((days[k] || {}).closing || {})[d.id] || 0)));
+    });
+    const ranked = items.map(d => ({ d, v: totClose[d.id] })).sort((a, b) => b.v - a.v).slice(0, 20);
+    document.getElementById('printReport').style.display = '';
+    document.getElementById('repTitle').textContent = "Nancy's System — " + label;
+    document.getElementById('repSummary').textContent = period.length + ' days | total opening ' + sum(dayOpen) + ' | total closing ' + sum(dayClose);
+    document.getElementById('genCount').textContent = label + ' ready';
+    const headHtml = '<tr><th>Item</th>' + period.map(k => '<th>' + k.slice(5) + '</th>').join('') + '<th>Total</th></tr>';
+    document.getElementById('openHead').innerHTML = headHtml;
+    document.getElementById('closeHead').innerHTML = headHtml;
+    document.getElementById('openBody').innerHTML = items.map(d =>
+      '<tr><td>' + d.name + '</td>' + period.map(k => '<td>' + (((days[k] || {}).opening || {})[d.id] ?? '') + '</td>').join('') + '<td><b>' + totOpen[d.id] + '</b></td></tr>').join('');
+    document.getElementById('closeBody').innerHTML = items.map(d =>
+      '<tr><td>' + d.name + '</td>' + period.map(k => '<td>' + (((days[k] || {}).closing || {})[d.id] ?? '') + '</td>').join('') + '<td><b>' + totClose[d.id] + '</b></td></tr>').join('');
+    if (typeof Chart !== 'undefined') {
+      if (rp1) rp1.destroy(); if (rp2) rp2.destroy(); if (rp3) rp3.destroy();
+      rp1 = new Chart(document.getElementById('rpCloseLine'), { type: 'line',
+        data: { labels: period, datasets: [{ label: 'Total closing each day', data: dayClose, borderColor: '#d97706', fill: false, tension: 0.3 }] }, options: { responsive: true } });
+      rp2 = new Chart(document.getElementById('rpOpenBar'), { type: 'bar',
+        data: { labels: ranked.map(r => r.d.name), datasets: [{ label: 'Opening total (top 20)', data: ranked.map(r => totOpen[r.d.id]), backgroundColor: '#059669' }] }, options: { responsive: true } });
+      rp3 = new Chart(document.getElementById('rpCloseBar'), { type: 'bar',
+        data: { labels: ranked.map(r => r.d.name), datasets: [{ label: 'Closing total (top 20)', data: ranked.map(r => totClose[r.d.id]), backgroundColor: '#d97706' }] }, options: { responsive: true } });
+    }
+    document.getElementById('printReport').scrollIntoView();
+  }
+  function exportPDF() {
+    const rp = document.getElementById('printReport');
+    if (!rp || rp.style.display === 'none') { alert('Generate a report first.'); return; }
+    document.title = document.getElementById('repTitle').textContent;
+    window.onafterprint = () => showSection(currentSection, true);
+    document.querySelectorAll('main .view').forEach(v => v.style.display = 'none');
+    document.getElementById('view-reports').style.display = '';
+    window.print();
+  }
+  function historyFor(id) {
+    const days = loadDays();
+    return Object.keys(days).sort().map(k => ({ day: k, open: +((days[k].opening || {})[id] ?? NaN), close: +((days[k].closing || {})[id] ?? NaN) }));
+  }
+  let chP = null;
+  function runAI() {
+    const days = loadDays();
+    const keys = Object.keys(days).sort().filter(k => k.indexOf('demo-') !== 0);
+    if (keys.length < 2) { document.getElementById('aiAlerts').innerHTML = 'Need at least 2 real saved days (demo days excluded). Save days in Drinks first.'; return; }
+    const preds = [], alerts = [], solutions = [];
+    allDrinks.slice(0, 60).forEach(d => {
+      const h = historyFor(d.id).filter(x => !isNaN(x.close));
+      if (h.length < 2) return;
+      const last3 = h.slice(-3).map(x => x.close);
+      const avg = last3.reduce((a, b) => a + b, 0) / last3.length;
+      const trend = (h[h.length - 1].close - h[0].close) / h.length;
+      let pred = Math.max(0, Math.round(avg + trend * 0.5));
+      const last = h[h.length - 1].close;
+      const recOpen = Math.max(pred + Math.ceil(avg * 0.3), pred + 5);
+      preds.push({ id: d.id, name: d.name, last, avg: Math.round(avg), pred, recOpen });
+      if (avg > 0 && Math.abs(last - avg) / avg > 0.5)
+        alerts.push('⚠️ <b>' + d.name + '</b>: sudden ' + (last > avg ? 'jump' : 'drop') + ' — last ' + last + ' vs avg ' + Math.round(avg) + ' on ' + h[h.length - 1].day);
+      if (last === 0) alerts.push('⛔ <b>' + d.name + '</b>: closing is ZERO (stockout) on ' + h[h.length - 1].day);
+      const opens = h.filter(x => !isNaN(x.open));
+      if (opens.length && last > opens[opens.length - 1].open)
+        alerts.push('❌ <b>' + d.name + '</b>: closing (' + last + ') exceeds opening (' + opens[opens.length - 1].open + ') — possible counting mistake');
+      if (h.length >= 3 && h.slice(-3).every(x => x.close === last))
+        alerts.push('🔁 <b>' + d.name + '</b>: unchanged for 3+ days (' + last + ') — dead stock or entry not updated');
+      if (pred <= 5) solutions.push('🛒 Reorder <b>' + d.name + '</b> — predicted closing ' + pred + '. Recommended opening: ' + recOpen);
+    });
+    const top = preds.slice(0, 15);
+    document.getElementById('aiRows').innerHTML = top.map(p =>
+      '<tr><td>' + p.name + '</td><td>' + p.last + '</td><td>' + p.avg + '</td><td><b>' + p.pred + '</b></td><td>' + p.recOpen + '</td></tr>').join('');
+    document.getElementById('aiAlerts').innerHTML = alerts.length ? alerts.slice(0, 40).join('<br>') : 'No major changes or mistakes detected.';
+    const uniqSol = [...new Set(solutions)];
+    document.getElementById('aiSolutions').innerHTML =
+      (uniqSol.length ? uniqSol.slice(0, 20).join('<br>') + '<br>' : '') +
+      '✔️ General: recount any item flagged ❌ before saving.<br>' +
+      '✔️ Investigate every ⚠️ spike/drop the same day (theft, breakage, unrecorded sale).<br>' +
+      '✔️ Set opening tomorrow = recommended open in the table to avoid stockouts.';
+    document.getElementById('aiCount').textContent = preds.length + ' items predicted from ' + keys.length + ' days';
+    if (typeof Chart !== 'undefined') {
+      if (chP) chP.destroy();
+      chP = new Chart(document.getElementById('chPredict'), { type: 'bar',
+        data: { labels: top.map(p => p.name), datasets: [{ label: 'Predicted closing', data: top.map(p => p.pred), backgroundColor: '#065f46' }] }, options: { responsive: true } });
+    }
+  }
+  function isNumAI(v) { return v !== '' && v !== undefined && v !== null && !isNaN(parseFloat(v)); }
+  function checkScannedDocs() {
+    const docs = loadDocs();
+    const box = document.getElementById('scanCheckResult');
+    if (!docs.length) { box.innerHTML = 'No scanned documents yet. Scan sheets in Upload & Scan first.'; return; }
+    let html = '';
+    docs.forEach((doc, di) => {
+      const rectified = /rectified/i.test(doc.date || '');
+      const errs = [];
+      (doc.rows || []).forEach(r => {
+        const g = v => isNumAI(v) ? parseFloat(v) : undefined;
+        const o = g(r.opening), a = g(r.add), t = g(r.total), c = g(r.closing), s = g(r.sales), p = g(r.price), m = g(r.amount);
+        if (o !== undefined && a !== undefined && t !== undefined && t !== o + a)
+          errs.push('No ' + r.id + ' ' + r.name + ' — Total ' + t + ' ≠ ' + o + ' + ' + a + ' = ' + (o + a));
+        const tt = (o !== undefined && a !== undefined) ? o + a : t;
+        if (tt !== undefined && c !== undefined && s !== undefined && s !== tt - c)
+          errs.push('No ' + r.id + ' ' + r.name + ' — Sales ' + s + ' ≠ ' + tt + ' − ' + c + ' = ' + (tt - c));
+        const ss = (tt !== undefined && c !== undefined) ? tt - c : s;
+        if (ss !== undefined && p !== undefined && m !== undefined && m !== ss * p)
+          errs.push('No ' + r.id + ' ' + r.name + ' — Amount ' + m + ' ≠ ' + ss + ' × ' + p + ' = ' + (ss * p));
+      });
+      const verdict = !errs.length
+        ? (rectified ? '<b style="color:#16a34a;">✅ Rectified in the right manner — all formulas balance.</b>' : '<b style="color:#16a34a;">✅ Clean — no formula errors.</b>')
+        : '<b style="color:#b91c1c;">❌ ' + errs.length + ' error(s)' + (rectified ? ' still remain after rectification — review needed.' : ' detected.') + '</b>';
+      html += '<div class="report-card" style="margin-top:12px;"><h3>Scan ' + (di + 1) + ' — ' + docLabel(doc) + ' (' + (doc.rows || []).length + ' rows)</h3><div>' + verdict + '</div>' +
+        (errs.length ? '<div style="margin-top:8px;">' + errs.slice(0, 30).map((w, i) => (i + 1) + '. ' + w).join('<br>') + (errs.length > 30 ? '<br>...and ' + (errs.length - 30) + ' more' : '') + '</div>' : '') + '</div>';
+    });
+    box.innerHTML = html;
+    document.getElementById('scanCheckCount').textContent = docs.length + ' document(s) checked';
+  }
+  let scanURLs = [], clearedThumbs = {}, clearedFull = {};
+  let lastText = '', lastParsed = [], lastUnparsed = '', lastRows = [], lastFound = {};
+  function norm(s) { return (s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+  function matchDrink(line) {
+    const low = line.toLowerCase(), nl = norm(line);
+    let match = null;
+    allDrinks.forEach(d => {
+      if (d.name.length > 3 && low.includes(d.name.toLowerCase())) {
+        if (!match || d.name.length > match.name.length) match = d;
+      }
+    });
+    if (!match) {
+      allDrinks.forEach(d => {
+        const nd = norm(d.name);
+        if (nd.length > 3 && nl.includes(nd)) {
+          if (!match || nd.length > norm(match.name).length) match = d;
+        }
+      });
+    }
+    return match;
+  }
+  async function enhanceImage(file, contrast, maxW, maxMP) {
+    const bmp = await createImageBitmap(file);
+    let scale = 2;
+    if (maxW) scale = Math.min(scale, maxW / bmp.width);
+    if (maxMP) scale = Math.min(scale, Math.sqrt(maxMP / (bmp.width * bmp.height)));
+    const cv = document.createElement('canvas');
+    cv.width = Math.max(1, Math.round(bmp.width * scale));
+    cv.height = Math.max(1, Math.round(bmp.height * scale));
+    const ctx = cv.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(bmp, 0, 0, cv.width, cv.height);
+    const img = ctx.getImageData(0, 0, cv.width, cv.height);
+    const d = img.data, n = d.length / 4;
+    const gray = new Float32Array(n);
+    for (let i = 0; i < n; i++) gray[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
+    const sorted = Float32Array.from(gray).sort();
+    const lo = sorted[Math.floor(n * 0.02)], hi = sorted[Math.floor(n * 0.98)];
+    const span = Math.max(1, hi - lo);
+    const k = 0.3 * contrast;
+    const sharp = new Float32Array(n);
+    const W = cv.width, H = cv.height;
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        const i = y * W + x;
+        const st = g => 8 + ((g - lo) / span) * 239;
+        const base = st(gray[i]);
+        const l = x > 0 ? gray[i - 1] : gray[i], r = x < W - 1 ? gray[i + 1] : gray[i];
+        const u = y > 0 ? gray[i - W] : gray[i], dn = y < H - 1 ? gray[i + W] : gray[i];
+        let s = base + k * (4 * base - (st(l) + st(r) + st(u) + st(dn)));
+        sharp[i] = s < 0 ? 0 : s > 255 ? 255 : s;
+      }
+    }
+    for (let i = 0; i < n; i++) d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = sharp[i];
+    ctx.putImageData(img, 0, 0);
+    return cv;
+  }
+  function canvasBlob(cv) { return new Promise(res => cv.toBlob(b => res(b), 'image/png')); }
+  function readAsDataURL(file, maxW) {
+    return new Promise((res, rej) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        try {
+          const scale = Math.min(1, maxW / img.width);
+          const cv = document.createElement('canvas');
+          cv.width = Math.max(1, Math.round(img.width * scale));
+          cv.height = Math.max(1, Math.round(img.height * scale));
+          cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+          URL.revokeObjectURL(url);
+          res(cv.toDataURL('image/jpeg', 0.9));
+        } catch (e) { rej(e); }
+      };
+      img.onerror = rej;
+      img.src = url;
+    });
+  }
+  function persistScanImage(name, dataURL) {
+    try {
+      const scans = loadScans();
+      const s = scans.find(x => x.name === name);
+      if (s) { s.img = dataURL; storeScans(scans); }
+    } catch {}
+  }
+  function bootScans() { try { renderScans(); } catch (e) { console.error(e); } }
+  function uploadScans() {
+    const files = document.getElementById('scanFiles').files;
+    if (!files.length) return;
+    handleFiles([...files]);
+    document.getElementById('scanFiles').value = '';
+  }
+  async function handleFiles(files) {
+    const scans = loadScans();
+    for (const f of files) {
+      let file = f;
+      const isHeic = /\.hei(c|f)$/i.test(f.name) || (f.type || '').indexOf('heic') !== -1 || (f.type || '').indexOf('heif') !== -1;
+      if (isHeic) {
+        if (typeof heic2any === 'undefined') {
+          scans.push({ name: f.name + ' (HEIC — needs JPEG)', date: new Date().toISOString().slice(0, 10), size: f.size, heic: true });
+          document.getElementById('scanResult').innerHTML = '⚠️ ' + f.name + ' is an iPhone HEIC photo and cannot display. Connect to internet once for auto-convert, or iPhone Settings → Camera → Formats → Most Compatible, then re-upload.';
+          continue;
+        }
+        try {
+          const out = await heic2any({ blob: f, toType: 'image/jpeg', quality: 0.92 });
+          const blob = Array.isArray(out) ? out[0] : out;
+          file = new File([blob], f.name.replace(/\.hei(c|f)$/i, '.jpg'), { type: 'image/jpeg' });
+          toast('Converted ' + f.name + ' to JPEG.');
+        } catch (e) {
+          scans.push({ name: f.name + ' (HEIC convert failed)', date: new Date().toISOString().slice(0, 10), size: f.size, heic: true });
+          document.getElementById('scanResult').innerHTML = '⚠️ Could not convert ' + f.name + '. Use JPEG (Most Compatible) and re-upload.';
+          continue;
+        }
+      }
+      scans.push({ name: file.name, date: new Date().toISOString().slice(0, 10), size: file.size });
+      scanURLs.push({ name: file.name, url: URL.createObjectURL(file), file });
+    }
+    storeScans(scans);
+    renderScans();
+    buildClearedThumbs();
+  }
+  async function buildClearedThumbs() {
+    const asFinal = document.getElementById('finalAsIs').checked;
+    for (const u of scanURLs) {
+      if (!u.file || clearedThumbs[u.name]) continue;
+      if (asFinal) {
+        clearedThumbs[u.name] = u.url;
+        clearedFull[u.name] = u.url;
+        try { persistScanImage(u.name, await readAsDataURL(u.file, 1400)); } catch {}
+        renderScans();
+        continue;
+      }
+      try {
+        const cvT = await enhanceImage(u.file, CLEARITY, 360);
+        clearedThumbs[u.name] = cvT.toDataURL('image/png');
+        renderScans();
+        const cvF = await enhanceImage(u.file, CLEARITY, 1600);
+        const full = cvF.toDataURL('image/jpeg', 0.92);
+        clearedFull[u.name] = full;
+        persistScanImage(u.name, full);
+      } catch {}
+    }
+    renderScans();
+  }
+  function renderScans() {
+    const scans = loadScans();
+    document.getElementById('scanList').innerHTML = scans.length
+      ? scans.map((s, i) => {
+          const up = scanURLs.find(u => u.name === s.name);
+          const stored = s.img;
+          const cl = clearedThumbs[s.name] || stored;
+          const full = clearedFull[s.name] || stored || (up ? up.url : '');
+          const thumb = cl
+            ? '<img src="' + cl + '" onclick="openCleared(\'' + s.name.replace(/'/g, "\\'") + '\')" title="Click to view cleared full size" style="width:100%;height:130px;object-fit:contain;background:#f9fafb;border-radius:6px;cursor:zoom-in;border:2px solid #059669;" />'
+            : (up ? '<img src="' + up.url + '" style="width:100%;height:130px;object-fit:contain;background:#f9fafb;border-radius:6px;" />' : '<div style="height:130px;display:grid;place-items:center;background:#f3f4f6;border-radius:6px;">📄</div>');
+          const dl = full;
+          const safeName = ('cleared-' + s.name).replace(/[^a-zA-Z0-9._-]+/g, '_');
+          return '<div style="border:1px solid #e5e7eb;border-radius:10px;padding:8px;width:180px;text-align:center;">' +
+            thumb +
+            '<div style="font-size:10px;color:#059669;font-weight:700;">' + (cl ? (document.getElementById('finalAsIs').checked ? '⭐ final — click to zoom' : '✨ visible & clear — click to zoom') : 'clearing...') + '</div>' +
+            '<div style="font-size:11px;margin-top:4px;word-break:break-all;">' + s.name + '</div>' +
+            '<div style="font-size:10px;color:#6b7280;">' + s.date + '</div>' +
+            (s.downloaded ? '<div style="font-size:10px;color:#16a34a;font-weight:700;">⬇ downloaded ' + s.downloaded + '</div>' : '') +
+            '<div><button class="btn-small" style="margin-top:4px;" onclick="dlImage(\'' + s.name.replace(/'/g, "\\'") + '\')">⬇ Download</button></div>' +
+            '<button class="btn-danger" style="margin-top:4px;" onclick="removeScan(' + i + ')">Remove</button></div>';
+        }).join('')
+      : '<span style="font-size:12px;color:#6b7280;">No sheets uploaded yet.</span>';
+    renderLatest();
+    renderDownloads();
+  }
+  function renderLatest() {
+    const box = document.getElementById('latestBox');
+    if (!box) return;
+    const scans = loadScans();
+    let pick = null;
+    for (let i = scans.length - 1; i >= 0; i--) {
+      const s = scans[i];
+      const src = clearedFull[s.name] || clearedThumbs[s.name] || s.img || (scanURLs.find(u => u.name === s.name) || {}).url;
+      if (src) { pick = { s, src }; break; }
+    }
+    if (!pick) { box.innerHTML = ''; return; }
+    const safeName = ('cleared-' + pick.s.name).replace(/[^a-zA-Z0-9._-]+/g, '_');
+    box.innerHTML = '<div class="report-card" style="border:2px solid #d97706;">' +
+      '<h3>📄 Latest upload — ' + pick.s.name + '</h3>' +
+      '<img src="' + pick.src + '" onclick="openCleared(\'' + pick.s.name.replace(/'/g, "\\'") + '\')" title="Click to zoom" style="width:100%;max-height:340px;object-fit:contain;background:#f9fafb;border-radius:10px;cursor:zoom-in;" />' +
+      '<div class="report-row"><button class="btn-small" onclick="openCleared(\'' + pick.s.name.replace(/'/g, "\\'") + '\')">🔍 View full size</button>' +
+      '<button class="btn-green" onclick="dlImage(\'' + pick.s.name.replace(/'/g, "\\'") + '\')">⬇ Download</button></div></div>';
+  }
+  function removeScan(i) {
+    const scans = loadScans();
+    scans.splice(i, 1);
+    storeScans(scans);
+    renderScans();
+  }
+  function eraseAllScans() {
+    if (!loadScans().length) { alert('Nothing to erase.'); return; }
+    if (!confirm('Erase ALL uploaded sheets? This cannot be undone.')) return;
+    storeScans([]);
+    scanURLs = [];
+    clearedThumbs = {};
+    clearedFull = {};
+    renderScans();
+    document.getElementById('scanResult').innerHTML = '';
+    document.getElementById('foundBox').style.display = 'none';
+    document.getElementById('docBox').style.display = 'none';
+  }
+  function openCleared(name) {
+    const rec = loadScans().find(x => x.name === name);
+    const src = clearedFull[name] || clearedThumbs[name] || (rec && rec.img);
+    if (!src) return;
+    document.getElementById('modalImg').src = src;
+    document.getElementById('modalCap').textContent = name + ' — cleared full detail (click ✕ to close)';
+    document.getElementById('imgModal').style.display = 'grid';
+  }
+  function closeModal() { document.getElementById('imgModal').style.display = 'none'; }
+  async function dlImage(name) {
+    const up = scanURLs.find(u => u.name === name);
+    const rec = loadScans().find(x => x.name === name);
+    const src = clearedFull[name] || clearedThumbs[name] || (rec && rec.img) || (up && up.url) || '';
+    if (!src) { alert('Nothing to download yet — wait for the image to finish clearing.'); return; }
+    try {
+      let url = src, cleanup = false;
+      if (src.indexOf('data:') === 0) {
+        const blob = await (await fetch(src)).blob();
+        url = URL.createObjectURL(blob);
+        cleanup = true;
+      }
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = ('cleared-' + name).replace(/[^a-zA-Z0-9._-]+/g, '_');
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      if (cleanup) setTimeout(() => URL.revokeObjectURL(url), 10000);
+      markDownloaded(name);
+    } catch (e) { alert('Download failed: ' + e.message); }
+  }
+  function markDownloaded(name) {
+    try {
+      const scans = loadScans();
+      const s = scans.find(x => x.name === name);
+      if (s) { s.downloaded = new Date().toLocaleString(); storeScans(scans); renderDownloads(); renderScans(); }
+    } catch {}
+  }
+  function renderDownloads() {
+    const box = document.getElementById('dlList');
+    if (!box) return;
+    const done = loadScans().filter(s => s.downloaded);
+    document.getElementById('dlCount').textContent = done.length + ' downloaded';
+    box.innerHTML = done.length
+      ? done.map(s => {
+          const src = clearedFull[s.name] || clearedThumbs[s.name] || s.img || '';
+          const v = s.verified;
+          return '<div style="border:1px solid #e5e7eb;border-radius:10px;padding:8px;width:180px;text-align:center;">' +
+            (src ? '<img src="' + src + '" onclick="openCleared(\'' + s.name.replace(/'/g, "\\'") + '\')" title="Click to view" style="width:100%;height:130px;object-fit:contain;background:#f9fafb;border-radius:6px;cursor:zoom-in;" />' : '<div style="height:130px;display:grid;place-items:center;background:#f3f4f6;border-radius:6px;">📄</div>') +
+            '<div style="font-size:11px;margin-top:4px;word-break:break-all;">' + s.name + '</div>' +
+            '<div style="font-size:10px;color:#16a34a;font-weight:700;">⬇ downloaded ' + s.downloaded + '</div>' +
+            (v ? '<div style="font-size:10px;font-weight:700;color:' + (v.mistakes ? '#b91c1c' : '#16a34a') + ';">' + (v.mistakes ? '⚠️ ' + v.mistakes + ' mistake(s)' : '✅ verified clean') + ' (' + v.rows + ' rows)</div>' : '') +
+            '<div><button class="btn-green" onclick="scanDownload(\'' + s.name.replace(/'/g, "\\'") + '\')">1. Scan to table</button></div>' +
+            '<div><button class="btn-small" onclick="verifyDownload(\'' + s.name.replace(/'/g, "\\'") + '\')">2. Verify scan</button></div></div>';
+        }).join('')
+      : '<span style="font-size:12px;color:#6b7280;">No downloads yet. Press ⬇ Download on any sheet above.</span>';
+    renderVerifyLog();
+    refreshCheckDoc();
+  }
+  async function verifyDownload(name) {
+    const scans = loadScans();
+    const s = scans.find(x => x.name === name);
+    if (!s) return;
+    const src = clearedFull[name] || clearedThumbs[name] || s.img;
+    if (!src) { alert('No image saved for ' + name + '.'); return; }
+    if (typeof Tesseract === 'undefined') { alert('Verification needs internet (libraries load from CDN).'); return; }
+    toast('Verifying ' + name + '...');
+    try {
+      const blob = await (await fetch(src)).blob();
+      const res = await Tesseract.recognize(blob, 'eng');
+      const parsed = parseDocText(res.data.text || '');
+      let mistakes = 0;
+      parsed.rows.forEach(r => {
+        const exp = expectedFor(r);
+        ['total', 'sales', 'amount'].forEach(k => {
+          if (exp[k] !== undefined && isNum(r[k]) && parseFloat(r[k]) !== exp[k]) mistakes++;
+        });
+      });
+      s.verified = { date: new Date().toLocaleString(), rows: parsed.rows.length, mistakes };
+      storeScans(scans);
+      renderDownloads();
+      toast(name + ': ' + (mistakes ? mistakes + ' mistake(s).' : 'verified clean.'));
+    } catch (e) {
+      renderDownloads();
+      alert('Verification failed: ' + e.message);
+    }
+  }
+  async function scanDownload(name) {
+    const scans = loadScans();
+    const s = scans.find(x => x.name === name);
+    if (!s) return;
+    const src = clearedFull[name] || clearedThumbs[name] || s.img;
+    if (!src) { alert('No image saved for ' + name + '.'); return; }
+    if (typeof Tesseract === 'undefined') { alert('Scanning needs internet (libraries load from CDN). Connect and retry.'); return; }
+    const box = document.getElementById('scanResult');
+    box.innerHTML = 'Scanning downloaded document ' + name + '... please wait.';
+    document.getElementById('foundBox').style.display = 'none';
+    document.getElementById('docBox').style.display = 'none';
+    try {
+      const blob = await (await fetch(src)).blob();
+      const res = await Tesseract.recognize(blob, 'eng');
+      const text = res.data.text || '';
+      const found = {};
+      text.split('\n').forEach(line => {
+        const d = matchDrink(line);
+        if (!d || (d.id in found)) return;
+        const nums = (line.match(/[\d,]+(\.\d+)?/g) || []).map(n => n.replace(/,/g, ''));
+        if (d.price !== null && d.price !== undefined) {
+          const hit = nums.filter(n => n === String(d.price)).pop();
+          if (hit !== undefined) found[d.id] = hit;
+        }
+      });
+      lastText = ('===== ' + name + ' =====\n' + text.trim()).trim();
+      document.getElementById('docBox').style.display = '';
+      renderDocTable();
+      const ids = Object.keys(found);
+      if (ids.length) {
+        lastFound = found;
+        document.getElementById('foundRows').innerHTML = ids.map(id => {
+          const d = allDrinks.find(x => String(x.id) === String(id));
+          return '<tr><td>' + (d ? d.name : id) + '</td><td><b>' + found[id] + '</b></td><td>' + (d ? (d.price ?? '-') : '-') + '</td></tr>';
+        }).join('');
+        document.getElementById('foundBox').style.display = '';
+      }
+      box.innerHTML = 'Scan done: ' + name + ' → full table below with mistake check. Detected ' + ids.length + ' priced items.';
+      document.getElementById('docBox').scrollIntoView();
+    } catch (e) { box.innerHTML = 'Scan failed: ' + e.message; }
+  }
+  function renderVerifyLog() {
+    const log = loadScans().filter(s => s.verified);
+    document.getElementById('verifyLog').innerHTML = log.length
+      ? log.map((s, i) => (i + 1) + '. <b>' + s.name + '</b> — scanned ' + s.verified.date + ': ' + s.verified.rows + ' rows, ' +
+        (s.verified.mistakes ? '<b style="color:#b91c1c;">' + s.verified.mistakes + ' mistake(s)</b>' : '<b style="color:#16a34a;">verified clean</b>')).join('<br>')
+      : '<span style="color:#6b7280;">No verifications recorded yet. Press Verify scan on a download above.</span>';
+  }
+  function refreshCheckDoc() {
+    const sel = document.getElementById('checkDoc');
+    if (!sel) return;
+    const done = loadScans().filter(s => s.downloaded);
+    sel.innerHTML = done.map(s => '<option>' + s.name + '</option>').join('');
+  }
+  async function checkScan() {
+    const name = document.getElementById('checkDoc').value;
+    if (!name) { alert('Download a document first.'); return; }
+    document.getElementById('checkOut').innerHTML = 'Scanning ' + name + '...';
+    await scanDownload(name);
+    const box = document.getElementById('scanResult').innerHTML;
+    document.getElementById('checkOut').innerHTML = 'Scan step done. Result table is shown in the scanned-document section above. ' + box;
+  }
+  async function checkVerify() {
+    const name = document.getElementById('checkDoc').value;
+    if (!name) { alert('Download a document first.'); return; }
+    await verifyDownload(name);
+    const scans = loadScans();
+    const s = scans.find(x => x.name === name);
+    document.getElementById('checkOut').innerHTML = s && s.verified
+      ? 'Verification recorded just below: <b>' + name + '</b> — ' + s.verified.rows + ' rows, ' + (s.verified.mistakes ? s.verified.mistakes + ' mistake(s)' : 'verified clean') + '.'
+      : 'Verification finished — see records below.';
+  }
+  function scanMatch() {
+    const q = document.getElementById('scanSearch').value.trim().toLowerCase();
+    const box = document.getElementById('scanResult');
+    if (!q) { box.innerHTML = ''; return; }
+    const hits = allDrinks.filter(d => d.name.toLowerCase().includes(q)).slice(0, 10);
+    box.innerHTML = hits.length
+      ? 'Matches: ' + hits.map(d => '<b>' + d.name + '</b> (' + (d.price ?? '-') + ')').join(', ')
+      : 'No match for "' + q + '".';
+  }
+  function parseDocText(text) {
+    const rows = [], unparsed = [];
+    text.split('\n').forEach(raw => {
+      const line = raw.replace(/^=.*=$/, '').trim();
+      if (!line) return;
+      let match = matchDrink(line);
+      let nums = (line.match(/[\d,]+(\.\d+)?/g) || []).map(n => n.replace(/,/g, ''));
+      if (!match) {
+        const lead = nums.length ? parseInt(nums[0], 10) : NaN;
+        const byNo = allDrinks.find(d => d.id === lead);
+        if (byNo) { match = byNo; nums = nums.slice(1); }
+      } else {
+        if (nums.length && parseInt(nums[0], 10) === match.id) nums = nums.slice(1);
+      }
+      if (!match) { unparsed.push(line); return; }
+      const r = { id: match.id, name: match.name, opening: '', add: '', total: '', closing: '', sales: '', price: '', amount: '' };
+      const dbPrice = (match.price !== null && match.price !== undefined) ? String(match.price) : null;
+      if (dbPrice) {
+        const pi = nums.lastIndexOf(dbPrice);
+        if (pi !== -1) {
+          r.price = nums[pi];
+          if (nums[pi + 1] !== undefined) r.amount = nums[pi + 1];
+          nums = nums.slice(0, pi);
+        }
+      }
+      const cols = ['opening', 'add', 'total', 'closing', 'sales', 'price', 'amount'];
+      if (r.price) { ['opening', 'add', 'total', 'closing', 'sales'].forEach((c, i) => r[c] = nums[i] || ''); }
+      else { cols.forEach((c, i) => r[c] = nums[i] || ''); }
+      rows.push(r);
+    });
+    return { rows, unparsed };
+  }
+  function isNum(v) { return v !== '' && v !== undefined && !isNaN(parseFloat(v)); }
+  function expectedFor(r) {
+    const exp = {};
+    if (isNum(r.opening) && isNum(r.add)) exp.total = parseFloat(r.opening) + parseFloat(r.add);
+    const tot = exp.total !== undefined ? exp.total : (isNum(r.total) ? parseFloat(r.total) : undefined);
+    if (tot !== undefined && isNum(r.closing)) exp.sales = tot - parseFloat(r.closing);
+    const sal = exp.sales !== undefined ? exp.sales : (isNum(r.sales) ? parseFloat(r.sales) : undefined);
+    if (sal !== undefined && isNum(r.price)) exp.amount = sal * parseFloat(r.price);
+    return exp;
+  }
+  function renderDocTable() {
+    const parsed = parseDocText(lastText);
+    lastParsed = parsed.rows;
+    lastUnparsed = parsed.unparsed.length
+      ? 'Unmatched lines (' + parsed.unparsed.length + '): ' + parsed.unparsed.slice(0, 20).join(' | ')
+      : '';
+    drawDocTable(false);
+    lastRows = parsed.rows;
+    saveScanDoc(parsed.rows, parsed.unparsed, false);
+  }
+  function drawDocTable(rectified) {
+    let mistakes = 0;
+    const reasons = [];
+    document.getElementById('docRows').innerHTML = lastParsed.map(r => {
+      const exp = expectedFor(r);
+      const cell = k => {
+        if (!isNum(r[k]) || exp[k] === undefined) return '<td>' + (r[k] || '') + '</td>';
+        if (parseFloat(r[k]) === exp[k]) return '<td>' + r[k] + '</td>';
+        mistakes++;
+        const labels = { total: 'Total', sales: 'Sales', amount: 'Amount' };
+        const tVal = exp.total !== undefined ? exp.total : r.total;
+        const sVal = exp.sales !== undefined ? exp.sales : r.sales;
+        const formula = k === 'total'
+          ? 'Total = Opening + Add → ' + r.opening + ' + ' + r.add + ' = ' + exp[k]
+          : k === 'sales'
+          ? 'Sales = Total − Closing → ' + tVal + ' − ' + r.closing + ' = ' + exp[k]
+          : 'Amount = Sales × Price → ' + sVal + ' × ' + r.price + ' = ' + exp[k];
+        const why = k === 'total'
+          ? 'Total scanned as ' + r[k] + ' but Opening (' + r.opening + ') + Add (' + r.add + ') = ' + exp[k]
+          : k === 'sales'
+          ? 'Sales scanned as ' + r[k] + ' but Total (' + tVal + ') − Closing (' + r.closing + ') = ' + exp[k]
+          : 'Amount scanned as ' + r[k] + ' but Sales (' + sVal + ') × Price (' + r.price + ') = ' + exp[k];
+        reasons.push('<b>No ' + r.id + ' ' + r.name + ' — ' + labels[k] + ':</b> ' + why + '.<br><span style="color:#065f46;">Formula: ' + formula + '</span>');
+        if (rectified) return '<td class="fixed" title="Was: ' + r[k] + '">✓ ' + exp[k] + '</td>';
+        return '<td class="bad" title="Should be: ' + exp[k] + '">' + r[k] + ' ⚠️</td>';
+      };
+      return '<tr><td>' + r.id + '</td><td>' + r.name + '</td><td>' + (r.opening || '') + '</td><td>' + (r.add || '') + '</td>' +
+        cell('total') + '<td>' + (r.closing || '') + '</td>' + cell('sales') + '<td>' + (r.price || '') + '</td>' + cell('amount') + '</tr>';
+    }).join('') || '<tr><td colspan="9">No rows parsed.</td></tr>';
+    const up = document.getElementById('unparsed');
+    up.innerHTML = (mistakes && !rectified
+      ? '<b style="color:#b91c1c;">' + mistakes + ' mistake(s) underlined.</b> Press Rectify mistakes to authorize correction. '
+      : rectified ? '<b style="color:#16a34a;">Mistakes rectified with your authorization.</b> ' : 'No formula mistakes detected. ') + lastUnparsed;
+    document.getElementById('mistakeReasons').innerHTML = reasons.length
+      ? '<h3 style="color:#065f46;margin:6px 0;font-size:14px;">Reasons for each mistake</h3>' + reasons.map((w, i) => (i + 1) + '. ' + w).join('<br>')
+      : '';
+    return mistakes;
+  }
+  function rectifyMistakes() {
+    if (!lastParsed.length) { alert('Scan a document first.'); return; }
+    const n = drawDocTable(false);
+    if (!n) { alert('No mistakes to rectify.'); return; }
+    if (!confirm('Rectify ' + n + ' mistake(s)? Scanned values will be replaced with formula results.')) return;
+    lastParsed.forEach(r => {
+      const exp = expectedFor(r);
+      ['total', 'sales', 'amount'].forEach(k => {
+        if (exp[k] !== undefined && isNum(r[k]) && parseFloat(r[k]) !== exp[k]) r[k] = exp[k];
+      });
+    });
+    drawDocTable(true);
+    lastRows = lastParsed;
+    saveScanDoc(lastParsed.map(r => ({ ...r })), [], true);
+  }
+  function assureDoc() {
+    if (!lastParsed.length) { alert('Scan a document first.'); return; }
+    const issues = [];
+    lastParsed.forEach(r => {
+      const exp = expectedFor(r);
+      ['total', 'sales', 'amount'].forEach(k => {
+        if (exp[k] !== undefined && isNum(r[k]) && parseFloat(r[k]) !== exp[k])
+          issues.push('No ' + r.id + ' ' + r.name + ' — ' + k + ' is ' + r[k] + ', should be ' + exp[k]);
+      });
+    });
+    const box = document.getElementById('assurance');
+    const when = new Date().toLocaleString();
+    if (!issues.length) {
+      box.innerHTML = '<div class="report-card" style="border:2px solid #16a34a;">✅ <b>Assured ' + when + ':</b> all ' + lastParsed.length + ' rows balance. Safe to apply.</div>';
+      try {
+        const log = JSON.parse(localStorage.getItem('nancy_assurance') || '[]');
+        log.push({ date: when, rows: lastParsed.length, result: 'pass' });
+        localStorage.setItem('nancy_assurance', JSON.stringify(log));
+      } catch {}
+    } else {
+      box.innerHTML = '<div class="report-card" style="border:2px solid #b91c1c;">❌ <b>Not assured ' + when + ':</b> ' + issues.length + ' imbalance(s) remain — authorize Rectify mistakes first.<br>' + issues.slice(0, 20).map((w, i) => (i + 1) + '. ' + w).join('<br>') + '</div>';
+    }
+    box.scrollIntoView({ block: 'nearest' });
+  }
+  function applyScanned() {
+    const payload = {};
+    (lastRows || []).forEach(r => {
+      payload[r.id] = { price: r.price, opening: r.opening, add: r.add, closing: r.closing };
+    });
+    Object.keys(lastFound).forEach(id => {
+      if (!payload[id]) payload[id] = {};
+      if (payload[id].price === '' || payload[id].price === undefined) payload[id].price = lastFound[id];
+    });
+    localStorage.setItem(PENDING_KEY, JSON.stringify(payload));
+    toast(Object.keys(payload).length + ' scanned rows sent to Drinks.');
+    showSection('drinks');
+  }
+  function buildFromPhone() {
+    const t = document.getElementById('phoneText').value.trim();
+    if (!t) { alert('Paste the scanned text first.'); return; }
+    lastText = t;
+    lastFound = {};
+    document.getElementById('foundBox').style.display = 'none';
+    document.getElementById('docBox').style.display = '';
+    renderDocTable();
+    document.getElementById('scanResult').innerHTML = 'Table built from pasted text — review, rectify and assure below.';
+  }
+  function bootScans() { try { renderScans(); } catch (e) { console.error(e); } }
+  function bootScans() { try { renderScans(); } catch (e) { console.error(e); } }
+  function isN(v) { return v !== '' && v !== undefined && v !== null && !isNaN(parseFloat(v)); }
+  function rowErrors(r) {
+    const errs = [];
+    const g = v => isN(v) ? parseFloat(v) : undefined;
+    const o = g(r.opening), a = g(r.add), t = g(r.total), c = g(r.closing), s = g(r.sales), p = g(r.price), m = g(r.amount);
+    if (o !== undefined && a !== undefined && t !== undefined && t !== o + a)
+      errs.push({ col: 'total', want: o + a, msg: 'Total ' + t + ' ≠ ' + o + ' + ' + a });
+    const tt = (o !== undefined && a !== undefined) ? o + a : t;
+    if (tt !== undefined && c !== undefined && s !== undefined && s !== tt - c)
+      errs.push({ col: 'sales', want: tt - c, msg: 'Sales ' + s + ' ≠ ' + tt + ' − ' + c });
+    const ss = (tt !== undefined && c !== undefined) ? tt - c : s;
+    if (ss !== undefined && p !== undefined && m !== undefined && m !== ss * p)
+      errs.push({ col: 'amount', want: ss * p, msg: 'Amount ' + m + ' ≠ ' + ss + ' × ' + p });
+    return errs;
+  }
+  function aiCheckAll() {
+    const docs = loadDocs();
+    const box = document.getElementById('aiReport');
+    if (!docs.length) { box.innerHTML = 'No scanned documents yet.'; return { total: 0 }; }
+    let total = 0, unattended = 0, added = 0;
+    let html = '';
+    docs.forEach((doc, i) => {
+      const rectified = /rectified/i.test(doc.date || '');
+      const errs = [];
+      (doc.rows || []).forEach(r => rowErrors(r).forEach(e => errs.push('No ' + r.id + ' ' + r.name + ' — ' + e.msg)));
+      total += errs.length;
+      let status;
+      if (!errs.length) { status = '<b style="color:#16a34a;">✅ Clean.</b>'; }
+      else if (rectified) {
+        status = '<b style="color:#b91c1c;">❌ ' + errs.length + ' added/remaining error(s) in rectified version.</b>';
+        added += errs.length;
+      } else {
+        const laterFixed = docs.slice(i + 1).some(d => /rectified/i.test(d.date || ''));
+        if (laterFixed) { status = '<b style="color:#eab308;">⚠️ ' + errs.length + ' error(s) — rectified later, verify below.</b>'; }
+        else { status = '<b style="color:#b91c1c;">🔴 ' + errs.length + ' unattended error(s) — never rectified.</b>'; unattended += errs.length; }
+      }
+      html += '<div style="border:1px solid #e5e7eb;border-radius:10px;padding:10px;margin-top:10px;"><b>Scan ' + (i + 1) + ' — ' + docLabel(doc) + '</b> (' + (doc.rows || []).length + ' rows) ' +
+        '<button class="btn-danger" onclick="deleteScanAt(' + i + ')">Delete</button><br>' + status +
+        (errs.length ? '<div style="margin-top:6px;">' + errs.slice(0, 15).map((w, k) => (k + 1) + '. ' + w).join('<br>') + (errs.length > 15 ? '<br>...and ' + (errs.length - 15) + ' more' : '') + '</div>' : '') + '</div>';
+    });
+    document.getElementById('sdAiCount').textContent = total + ' error(s): ' + unattended + ' unattended, ' + added + ' added/remaining';
+    box.innerHTML = html;
+    return { total };
+  }
+  function rectifyAll() {
+    const docs = loadDocs();
+    if (!docs.length) { alert('No scanned documents.'); return; }
+    const check = aiCheckAll();
+    if (!check.total) { alert('No mistakes to rectify.'); return; }
+    if (!confirm('Rectify all ' + check.total + ' mistake(s) across all scanned documents at once?')) return;
+    docs.forEach(doc => {
+      (doc.rows || []).forEach(r => {
+        const g = v => isN(v) ? parseFloat(v) : undefined;
+        const o = g(r.opening), a = g(r.add);
+        if (o !== undefined && a !== undefined) r.total = o + a;
+        const t = g(r.total);
+        const c = g(r.closing);
+        if (t !== undefined && c !== undefined) r.sales = t - c;
+        const s = g(r.sales), p = g(r.price);
+        if (s !== undefined && p !== undefined) r.amount = s * p;
+        if (!/rectified/i.test(doc.date || '')) doc.date = (doc.date || '') + ' (rectified)';
+      });
+    });
+    saveDocs(docs);
+    scanDataInit();
+    aiCheckAll();
+    updateStats();
+    alert('All mistakes rectified at once.');
+  }
+  function scanDataInit() {
+    const docs = loadDocs();
+    const sel = document.getElementById('scanSelect');
+    sel.innerHTML = docs.map((d, i) => '<option value="' + i + '">' + docLabel(d) + ' (' + d.rows.length + ' rows)</option>').join('');
+    document.getElementById('scanCount').textContent = docs.length + ' scan(s) saved';
+    if (docs.length) { sel.value = docs.length - 1; showScan(); }
+  }
+  function showScan() {
+    const docs = loadDocs();
+    const doc = docs[+document.getElementById('scanSelect').value];
+    if (!doc) return;
+    document.getElementById('scanMeta').textContent = 'Scanned ' + docLabel(doc) + ' — ' + doc.rows.length + ' rows' +
+      (doc.unparsed && doc.unparsed.length ? ' — ' + doc.unparsed.length + ' unmatched lines' : '');
+    document.getElementById('dataRows').innerHTML = doc.rows.map(r =>
+      '<tr><td>' + r.id + '</td><td>' + r.name + '</td><td>' + (r.opening || '') + '</td><td>' + (r.add || '') + '</td><td>' + (r.total || '') + '</td><td>' + (r.closing || '') + '</td><td>' + (r.sales || '') + '</td><td>' + (r.price || '') + '</td><td>' + (r.amount || '') + '</td></tr>').join('');
+  }
+  function deleteScan() {
+    const docs = loadDocs();
+    const idx = +document.getElementById('scanSelect').value;
+    if (!docs[idx]) { alert('No scan selected.'); return; }
+    if (!confirm('Delete scan "' + docLabel(docs[idx]) + '"? This cannot be undone.')) return;
+    docs.splice(idx, 1);
+    saveDocs(docs);
+    scanDataInit();
+    aiCheckAll();
+    updateStats();
+  }
+  function deleteScanAt(i) {
+    const docs = loadDocs();
+    if (!docs[i]) return;
+    if (!confirm('Delete scan "' + docLabel(docs[i]) + '"? This cannot be undone.')) return;
+    docs.splice(i, 1);
+    saveDocs(docs);
+    scanDataInit();
+    aiCheckAll();
+    updateStats();
+  }
+  function scorePassword(p) {
+    let s = 0;
+    if (p.length >= 8) s++;
+    if (p.length >= 12) s++;
+    if (/[A-Z]/.test(p) && /[a-z]/.test(p)) s++;
+    if (/\d/.test(p)) s++;
+    if (/[^A-Za-z0-9]/.test(p)) s++;
+    return Math.min(s, 5);
+  }
+  function checkStrength(inputId, meterId, textId) {
+    const p = document.getElementById(inputId).value;
+    const s = scorePassword(p);
+    const colors = ['#e5e7eb', '#ef4444', '#f59e0b', '#eab308', '#22c55e', '#16a34a'];
+    const labels = ['Too short', 'Weak', 'Fair', 'Good', 'Strong', 'Very strong'];
+    document.getElementById(meterId).style.width = (s * 20) + '%';
+    document.getElementById(meterId).style.background = colors[s];
+    const t = document.getElementById(textId);
+    t.textContent = p ? labels[s] : '';
+    t.style.color = colors[s];
+    return s;
+  }
+  function generatePass(targetId) {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*';
+    let p = '';
+    for (let i = 0; i < 12; i++) p += chars[Math.floor(Math.random() * chars.length)];
+    document.getElementById(targetId).value = p;
+    if (targetId === 'staffPass') checkStrength('staffPass', 'staffMeter', 'staffText');
+    if (targetId === 'adminPass') checkStrength('adminPass', 'adminMeter', 'adminText');
+  }
+  function copyGen() {
+    const el = document.getElementById('genOut');
+    el.select(); document.execCommand('copy');
+    toast('Copied: ' + el.value);
+  }
+  function validEmail(e) { return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e); }
+  function saveAdmin() {
+    const email = document.getElementById('adminEmail').value.trim();
+    const pass = document.getElementById('adminPass').value;
+    if (!validEmail(email)) { alert('Enter a valid admin email.'); return; }
+    if (scorePassword(pass) < 3) { alert('Admin password too weak. Use 8+ chars with upper, lower, number and symbol.'); return; }
+    localStorage.setItem(ADMIN_KEY, JSON.stringify({ email }));
+    const auth = getAuth(); auth[email.toLowerCase()] = pass; setAuth(auth);
+    sessionStorage.setItem('nancy_user', email);
+    toast('Admin saved: ' + email);
+    updateStats();
+  }
+  function addStaff() {
+    const name = document.getElementById('staffName').value.trim();
+    const email = document.getElementById('staffEmail').value.trim();
+    const pass = document.getElementById('staffPass').value;
+    if (!name) { alert('Enter staff name.'); return; }
+    if (!validEmail(email)) { alert('Enter a valid staff email.'); return; }
+    if (scorePassword(pass) < 3) { alert('Staff password too weak. Generate a strong one.'); return; }
+    const staff = loadStaff();
+    if (staff.some(s => s.email.toLowerCase() === email.toLowerCase())) { alert('Staff email already exists.'); return; }
+    staff.push({ name, email });
+    saveStaff(staff);
+    const auth = getAuth(); auth[email.toLowerCase()] = pass; setAuth(auth);
+    document.getElementById('staffName').value = '';
+    document.getElementById('staffEmail').value = '';
+    document.getElementById('staffPass').value = '';
+    renderStaff();
+    updateStats();
+    toast('Staff added: ' + name);
+  }
+  function removeStaff(email) {
+    saveStaff(loadStaff().filter(s => s.email !== email));
+    const auth = getAuth(); delete auth[email.toLowerCase()]; setAuth(auth);
+    renderStaff();
+    updateStats();
+  }
+  function saveEmailSettings() {
+    const sys = document.getElementById('sysEmail').value.trim();
+    const al = document.getElementById('alertEmail').value.trim();
+    if (sys && !validEmail(sys)) { alert('Enter a valid sender email.'); return; }
+    if (al && !validEmail(al)) { alert('Enter a valid alerts email.'); return; }
+    localStorage.setItem(EMAIL_KEY, JSON.stringify({ sender: sys, alerts: al }));
+    toast('Email settings saved.');
+  }
+  function resetStaffPassword() {
+    const email = document.getElementById('resetStaffEmail').value;
+    const np = document.getElementById('resetStaffPass').value;
+    if (!email) { alert('No staff to reset.'); return; }
+    if (scorePassword(np) < 3) { alert('New password too weak. Generate a strong one.'); return; }
+    const auth = getAuth(); auth[email.toLowerCase()] = np; setAuth(auth);
+    document.getElementById('resetStaffPass').value = '';
+    toast('Password reset for ' + email + '.');
+  }
+  function renderStaff() {
+    const staff = loadStaff();
+    document.getElementById('staffRows').innerHTML = staff.length
+      ? staff.map(s => '<tr><td>' + s.name + '</td><td>' + s.email + '</td><td><button class="btn-danger" onclick="removeStaff(\'' + s.email + '\')">Remove</button></td></tr>').join('')
+      : '<tr><td colspan="3" style="color:#6b7280;">No staff yet.</td></tr>';
+    document.getElementById('resetStaffEmail').innerHTML = staff.map(s => '<option>' + s.email + '</option>').join('');
+  }
+  function bootScans() { try { renderScans(); } catch (e) { console.error('bootScans', e); } }
+  const CASH_KEY = 'nancy_cash', DEBT_KEY = 'nancy_debts', ORDER_KEY = 'nancy_orders', WASTE_KEY = 'nancy_waste';
+  function loadCash() { try { return JSON.parse(localStorage.getItem(CASH_KEY)) || {}; } catch { return {}; } }
+  function loadDebts() { try { return JSON.parse(localStorage.getItem(DEBT_KEY)) || []; } catch { return []; } }
+  function loadOrders() { try { return JSON.parse(localStorage.getItem(ORDER_KEY)) || []; } catch { return []; } }
+  function loadWaste() { try { return JSON.parse(localStorage.getItem(WASTE_KEY)) || []; } catch { return []; } }
+  function expectedRevenue(date) {
+    const src = reportSource();
+    const d = src[date];
+    if (!d) return 0;
+    let total = 0;
+    allDrinks.forEach(it => {
+      const o = +(d.opening[it.id] || 0), a = 0;
+      const t = o + a, c = +(d.closing[it.id] || 0), s = t - c;
+      if (s > 0 && it.price) total += s * it.price;
+    });
+    return Math.round(total);
+  }
+  function bootCash() {
+    const t = new Date().toISOString().slice(0, 10);
+    document.getElementById('cashDate').value = t;
+    loadCashDay();
+    renderCashHist();
+  }
+  function loadCashDay() {
+    const date = document.getElementById('cashDate').value;
+    document.getElementById('cashDateLabel').textContent = date;
+    const rec = loadCash()[date] || {};
+    document.getElementById('cashExpected').value = expectedRevenue(date);
+    document.getElementById('cashCounted').value = rec.cash ?? '';
+    document.getElementById('cashBy').value = rec.by || '';
+    document.getElementById('cashTo').value = rec.to || '';
+    document.getElementById('cashNote').value = rec.note || '';
+    document.getElementById('cashMpesa').value = rec.mpesa ?? '';
+    calcCash();
+  }
+  function calcCash() {
+    const exp = +document.getElementById('cashExpected').value || 0;
+    const c = +document.getElementById('cashCounted').value || 0;
+    const m = +document.getElementById('cashMpesa').value || 0;
+    const diff = c + m - exp;
+    const el = document.getElementById('cashDiff');
+    el.textContent = 'Difference: ' + diff + (diff === 0 ? ' ✅ balanced' : diff > 0 ? ' (over)' : ' (SHORTAGE)');
+    el.style.color = diff === 0 ? '#15803d' : '#b91c1c';
+  }
+  function saveCash() {
+    const date = document.getElementById('cashDate').value;
+    const all = loadCash();
+    all[date] = {
+      expected: +document.getElementById('cashExpected').value || 0,
+      cash: +document.getElementById('cashCounted').value || 0,
+      mpesa: +document.getElementById('cashMpesa').value || 0,
+      by: document.getElementById('cashBy').value.trim(),
+      to: document.getElementById('cashTo').value.trim(),
+      note: document.getElementById('cashNote').value.trim()
+    };
+    try { localStorage.setItem(CASH_KEY, JSON.stringify(all)); } catch {}
+    renderCashHist();
+    toast('Reconciliation saved for ' + date + '.');
+  }
+  function renderCashHist() {
+    const all = loadCash();
+    const keys = Object.keys(all).sort().reverse();
+    document.getElementById('cashRows').innerHTML = keys.length
+      ? keys.map(k => {
+          const r = all[k], diff = r.cash + r.mpesa - r.expected;
+          const hand = (r.by || r.to) ? ((r.by || '?') + ' → ' + (r.to || '?') + (r.note ? ' (' + r.note + ')' : '')) : '-';
+          return '<tr><td>' + k + '</td><td>' + r.expected + '</td><td>' + r.cash + '</td><td>' + r.mpesa + '</td><td><b>' + diff + '</b></td><td>' + hand + '</td><td>' + (diff === 0 ? '<span class="pill ok">balanced</span>' : '<span class="pill bad">off</span>') + '</td></tr>';
+        }).join('')
+      : '<tr><td colspan="7" style="color:#6b7280;">No reconciliations yet.</td></tr>';
+  }
+  function bootDebts() {
+    document.getElementById('debtDate').value = new Date().toISOString().slice(0, 10);
+    renderDebts();
+  }
+  function addDebt() {
+    const name = document.getElementById('debtName').value.trim();
+    const amount = +document.getElementById('debtAmount').value || 0;
+    if (!name) { alert('Enter a name.'); return; }
+    if (amount <= 0) { alert('Enter an amount above 0.'); return; }
+    const list = loadDebts();
+    list.push({ name, item: document.getElementById('debtItem').value.trim(), amount, date: document.getElementById('debtDate').value });
+    try { localStorage.setItem(DEBT_KEY, JSON.stringify(list)); } catch {}
+    document.getElementById('debtName').value = '';
+    document.getElementById('debtItem').value = '';
+    document.getElementById('debtAmount').value = '';
+    renderDebts();
+    toast('Debt recorded.');
+  }
+  function payDebt(i) {
+    const list = loadDebts();
+    const d = list[i];
+    if (!d) return;
+    if (!confirm('Mark paid: ' + d.name + ' — ' + d.amount + '?')) return;
+    list.splice(i, 1);
+    try { localStorage.setItem(DEBT_KEY, JSON.stringify(list)); } catch {}
+    renderDebts();
+    toast('Cleared.');
+  }
+  function delDebt(i) {
+    const list = loadDebts();
+    list.splice(i, 1);
+    try { localStorage.setItem(DEBT_KEY, JSON.stringify(list)); } catch {}
+    renderDebts();
+  }
+  function renderDebts() {
+    const list = loadDebts();
+    const owed = list.reduce((a, d) => a + (+d.amount || 0), 0);
+    document.getElementById('debtTotal').textContent = owed;
+    document.getElementById('debtRows').innerHTML = list.length
+      ? list.map((d, i) => '<tr><td>' + d.name + '</td><td>' + (d.item || '-') + '</td><td><b>' + d.amount + '</b></td><td>' + d.date + '</td><td><button class="btn-green" style="margin-top:0;padding:6px 12px;" onclick="payDebt(' + i + ')">Paid</button> <button class="btn-danger" onclick="delDebt(' + i + ')">Delete</button></td></tr>').join('')
+      : '<tr><td colspan="5" style="color:#6b7280;">No outstanding debts.</td></tr>';
+  }
+  function bootOrders() {
+    renderOrderHist();
+    const dl = document.getElementById('supplierNames');
+    if (dl) dl.innerHTML = supplierList().map(s => '<option value="' + s + '">').join('');
+  }
+  function genOrders() {
+    const level = +document.getElementById('reorderLevel').value || 0;
+    const target = +document.getElementById('targetStock').value || 0;
+    const src = reportSource();
+    const keys = Object.keys(src).sort();
+    if (!keys.length) { alert('Save a day first.'); return; }
+    const last = src[keys[keys.length - 1]].closing || {};
+    const lines = [];
+    allDrinks.forEach(d => {
+      if (last[d.id] === undefined) return;
+      const c = +last[d.id];
+      if (c <= level) {
+        const qty = Math.max(0, target - c);
+        lines.push({ id: d.id, name: d.name, closing: c, qty, cost: qty * (+d.price || 0) });
+      }
+    });
+    const cost = lines.reduce((a, l) => a + l.cost, 0);
+    document.getElementById('orderTotal').textContent = lines.length + ' lines · est. cost ' + cost;
+    document.getElementById('orderRows').innerHTML = lines.length
+      ? lines.map(l => '<tr><td>' + l.name + '</td><td>' + l.closing + '</td><td><b>' + l.qty + '</b></td><td>' + l.cost + '</td></tr>').join('')
+      : '<tr><td colspan="4">Nothing below reorder level. Stock healthy.</td></tr>';
+    window._orderDraft = lines;
+  }
+  function saveOrder() {
+    const lines = window._orderDraft || [];
+    if (!lines.length) { alert('Generate an order first.'); return; }
+    const orders = loadOrders();
+    orders.push({ date: new Date().toISOString().slice(0, 10), supplier: document.getElementById('orderSupplier').value.trim(), lines, cost: lines.reduce((a, l) => a + l.cost, 0), status: 'pending' });
+    try { localStorage.setItem(ORDER_KEY, JSON.stringify(orders)); } catch {}
+    renderOrderHist();
+    toast('Order saved.');
+  }
+  function recvOrder(i) {
+    const orders = loadOrders();
+    if (orders[i]) orders[i].status = 'received';
+    try { localStorage.setItem(ORDER_KEY, JSON.stringify(orders)); } catch {}
+    renderOrderHist();
+  }
+  function delOrder(i) {
+    const orders = loadOrders();
+    orders.splice(i, 1);
+    try { localStorage.setItem(ORDER_KEY, JSON.stringify(orders)); } catch {}
+    renderOrderHist();
+  }
+  function renderOrderHist() {
+    const orders = loadOrders();
+    document.getElementById('orderHist').innerHTML = orders.length
+      ? orders.map((o, i) => '<tr><td>' + o.date + '</td><td>' + (o.supplier || '-') + '</td><td>' + o.lines.length + '</td><td><b>' + o.cost + '</b></td><td>' + (o.status === 'received' ? '<span class="pill ok">received</span>' : '<span class="pill warn">pending</span>') + '</td><td>' + (o.status === 'received' ? '' : '<button class="btn-green" style="margin-top:0;padding:6px 12px;" onclick="recvOrder(' + i + ')">Received</button> ') + '<button class="btn-danger" onclick="delOrder(' + i + ')">Delete</button></td></tr>').join('')
+      : '<tr><td colspan="6" style="color:#6b7280;">No saved orders.</td></tr>';
+  }
+  function bootWaste() {
+    document.getElementById('wasteDate').value = new Date().toISOString().slice(0, 10);
+    renderWaste();
+  }
+  function addWaste() {
+    const item = document.getElementById('wasteItem').value.trim();
+    const qty = +document.getElementById('wasteQty').value || 0;
+    if (!item) { alert('Enter the item.'); return; }
+    if (qty <= 0) { alert('Enter a qty above 0.'); return; }
+    const list = loadWaste();
+    list.push({ item, qty, reason: document.getElementById('wasteReason').value, date: document.getElementById('wasteDate').value });
+    try { localStorage.setItem(WASTE_KEY, JSON.stringify(list)); } catch {}
+    document.getElementById('wasteItem').value = '';
+    document.getElementById('wasteQty').value = '';
+    renderWaste();
+    toast('Loss recorded.');
+  }
+  function delWaste(i) {
+    const list = loadWaste();
+    list.splice(i, 1);
+    try { localStorage.setItem(WASTE_KEY, JSON.stringify(list)); } catch {}
+    renderWaste();
+  }
+  function renderWaste() {
+    const list = loadWaste();
+    const month = new Date().toISOString().slice(0, 7);
+    document.getElementById('wasteTotal').textContent = list.filter(w => (w.date || '').indexOf(month) === 0).reduce((a, w) => a + (+w.qty || 0), 0) + ' units';
+    document.getElementById('wasteRows').innerHTML = list.length
+      ? list.slice().reverse().map((w, ri) => {
+          const i = list.length - 1 - ri;
+          return '<tr><td>' + w.item + '</td><td><b>' + w.qty + '</b></td><td>' + w.reason + '</td><td>' + w.date + '</td><td><button class="btn-danger" onclick="delWaste(' + i + ')">Delete</button></td></tr>';
+        }).join('')
+      : '<tr><td colspan="5" style="color:#6b7280;">No losses recorded.</td></tr>';
+  }
+  function exportBackup() {
+    try {
+      const data = {};
+      [LS_KEY, 'nancy_scanned_docs', SCAN_KEY, STAFF_KEY, ADMIN_KEY, AUTH_KEY, EMAIL_KEY, DRAFT_KEY, CASH_KEY, DEBT_KEY, ORDER_KEY, WASTE_KEY, 'nancy_assurance', PENDING_KEY].forEach(k => {
+        data[k] = localStorage.getItem(k);
+      });
+      const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'nancy-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      toast('Backup downloaded.');
+    } catch (e) { alert('Backup failed: ' + e.message); }
+  }
+  function importBackup() {
+    const f = document.getElementById('backupFile').files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      try {
+        const data = JSON.parse(r.result);
+        Object.keys(data).forEach(k => { if (data[k] !== null && data[k] !== undefined) localStorage.setItem(k, data[k]); });
+        alert('Backup restored. Reloading.');
+        location.reload();
+      } catch (e) { alert('Bad backup file: ' + e.message); }
+    };
+    r.readAsText(f);
+  }
+  const SALE_KEY = 'nancy_sales', EXP_KEY = 'nancy_expenses', PRICE_KEY = 'nancy_prices';
+  function loadSales() { try { return JSON.parse(localStorage.getItem(SALE_KEY)) || {}; } catch { return {}; } }
+  function loadExpenses() { try { return JSON.parse(localStorage.getItem(EXP_KEY)) || []; } catch { return []; } }
+  function todayKey() { return new Date().toISOString().slice(0, 10); }
+  function applyPriceOverrides() {
+    let ov = null;
+    try { ov = JSON.parse(localStorage.getItem(PRICE_KEY)); } catch {}
+    if (!ov) return;
+    allDrinks.forEach(d => { if (ov[d.id] !== undefined && ov[d.id] !== '') d.price = +ov[d.id]; });
+  }
+  function savePrices() {
+    const ov = {};
+    document.querySelectorAll('#drinkRows tr[data-id]').forEach(row => {
+      const v = row.querySelector('.c-price').value;
+      if (v !== '') ov[row.getAttribute('data-id')] = +v;
+    });
+    try { localStorage.setItem(PRICE_KEY, JSON.stringify(ov)); } catch {}
+    toast('Prices saved for ' + Object.keys(ov).length + ' items.');
+  }
+  function saleAutofill() {
+    const q = document.getElementById('saleItem').value.trim().toLowerCase();
+    const m = allDrinks.find(d => d.name.toLowerCase() === q);
+    if (m && (m.price !== null && m.price !== undefined) && !document.getElementById('salePrice').dataset.touched)
+      document.getElementById('salePrice').value = m.price;
+    const qty = +document.getElementById('saleQty').value || 0;
+    const pr = +document.getElementById('salePrice').value || 0;
+    document.getElementById('saleAmount').value = qty * pr;
+  }
+  document.getElementById('salePrice').addEventListener('input', () => { document.getElementById('salePrice').dataset.touched = '1'; });
+  function addSale() {
+    const item = document.getElementById('saleItem').value.trim();
+    const qty = +document.getElementById('saleQty').value || 0;
+    const price = +document.getElementById('salePrice').value || 0;
+    if (!item) { alert('Enter the item.'); return; }
+    if (qty <= 0) { alert('Qty must be above 0.'); return; }
+    const all = loadSales();
+    const k = todayKey();
+    if (!all[k]) all[k] = [];
+    const now = new Date();
+    all[k].push({ item, qty, price, amount: qty * price, time: String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') });
+    try { localStorage.setItem(SALE_KEY, JSON.stringify(all)); } catch {}
+    document.getElementById('saleItem').value = '';
+    document.getElementById('saleQty').value = 1;
+    document.getElementById('salePrice').value = '';
+    delete document.getElementById('salePrice').dataset.touched;
+    document.getElementById('saleAmount').value = '';
+    renderSales();
+    updateStats();
+    toast('Sale recorded: ' + item + ' × ' + qty + '.');
+  }
+  function delSale(i) {
+    const all = loadSales();
+    const k = todayKey();
+    if (all[k]) all[k].splice(i, 1);
+    try { localStorage.setItem(SALE_KEY, JSON.stringify(all)); } catch {}
+    renderSales();
+    updateStats();
+  }
+  function renderSales() {
+    const list = loadSales()[todayKey()] || [];
+    const tot = list.reduce((a, s) => a + (+s.amount || 0), 0);
+    document.getElementById('salesTotal').textContent = tot;
+    document.getElementById('salesRows').innerHTML = list.length
+      ? list.slice().reverse().map((s, ri) => {
+          const i = list.length - 1 - ri;
+          return '<tr><td>' + s.time + '</td><td>' + s.item + '</td><td>' + s.qty + '</td><td><b>' + s.amount + '</b></td><td><button class="btn-danger" onclick="delSale(' + i + ')">Delete</button></td></tr>';
+        }).join('')
+      : '<tr><td colspan="5" style="color:#6b7280;">No sales today yet.</td></tr>';
+  }
+  function bootSales() { renderSales(); }
+  function addExpense() {
+    const desc = document.getElementById('expDesc').value.trim();
+    const amount = +document.getElementById('expAmount').value || 0;
+    if (!desc) { alert('Enter a description.'); return; }
+    if (amount <= 0) { alert('Amount must be above 0.'); return; }
+    const list = loadExpenses();
+    list.push({ desc, amount, date: document.getElementById('expDate').value || todayKey(), cat: document.getElementById('expCat').value });
+    try { localStorage.setItem(EXP_KEY, JSON.stringify(list)); } catch {}
+    document.getElementById('expDesc').value = '';
+    document.getElementById('expAmount').value = '';
+    renderExpenses();
+    updateStats();
+    toast('Expense recorded.');
+  }
+  function delExpense(i) {
+    const list = loadExpenses();
+    list.splice(i, 1);
+    try { localStorage.setItem(EXP_KEY, JSON.stringify(list)); } catch {}
+    renderExpenses();
+    updateStats();
+  }
+  function renderExpenses() {
+    const list = loadExpenses();
+    const month = todayKey().slice(0, 7);
+    document.getElementById('expTotal').textContent = list.filter(e => (e.date || '').indexOf(month) === 0).reduce((a, e) => a + (+e.amount || 0), 0);
+    document.getElementById('expRows').innerHTML = list.length
+      ? list.slice().reverse().map((e, ri) => {
+          const i = list.length - 1 - ri;
+          return '<tr><td>' + e.desc + '</td><td>' + e.cat + '</td><td><b>' + e.amount + '</b></td><td>' + e.date + '</td><td><button class="btn-danger" onclick="delExpense(' + i + ')">Delete</button></td></tr>';
+        }).join('')
+      : '<tr><td colspan="5" style="color:#6b7280;">No expenses yet.</td></tr>';
+  }
+  function bootExpenses() {
+    document.getElementById('expDate').value = todayKey();
+    renderExpenses();
+  }
+  function supplierList() {
+    const set = {};
+    loadOrders().forEach(o => { if (o.supplier) set[o.supplier] = 1; });
+    return Object.keys(set);
+  }
+  async function scanAllUploads() {
+    const box = document.getElementById('scanPanelOut');
+    const status = document.getElementById('scanPanelStatus');
+    const files = scanURLs.filter(u => u.file);
+    const stored = loadScans().filter(s => s.img && !scanURLs.some(u => u.name === s.name));
+    if (!files.length && !stored.length) { box.innerHTML = 'Upload sheets below first, then scan them all.'; return; }
+    if (typeof Tesseract === 'undefined') { box.innerHTML = 'Bulk scan needs internet (libraries load from CDN). Connect and retry.'; return; }
+    const asFinal = document.getElementById('finalAsIs').checked;
+    let fullText = '', count = 0;
+    const total = files.length + stored.length;
+    for (const u of files) {
+      try {
+        status.textContent = 'Reading ' + (++count) + '/' + total + '...';
+        box.innerHTML = 'Scanning <b>' + u.file.name + '</b> (' + count + '/' + total + ')...';
+        let input = u.file;
+        if (!asFinal) {
+          const cv = await enhanceImage(u.file, CLEARITY, 0, 3000000);
+          input = await canvasBlob(cv);
+        }
+        const res = await Tesseract.recognize(input, 'eng');
+        fullText += '===== ' + u.file.name + ' =====\n' + (res.data.text || '').trim() + '\n\n';
+      } catch (e) { box.innerHTML += '<br>⚠️ ' + u.file.name + ': ' + e.message; }
+    }
+    for (const s of stored) {
+      try {
+        status.textContent = 'Reading ' + (++count) + '/' + total + '...';
+        box.innerHTML = 'Scanning <b>' + s.name + '</b> (' + count + '/' + total + ')...';
+        const blob = await (await fetch(s.img)).blob();
+        const res = await Tesseract.recognize(blob, 'eng');
+        fullText += '===== ' + s.name + ' =====\n' + (res.data.text || '').trim() + '\n\n';
+      } catch (e) { box.innerHTML += '<br>⚠️ ' + s.name + ': ' + e.message; }
+    }
+    status.textContent = '';
+    lastText = fullText.trim();
+    lastFound = {};
+    document.getElementById('foundBox').style.display = 'none';
+    document.getElementById('docBox').style.display = '';
+    renderDocTable();
+    box.innerHTML = 'Bulk scan done: ' + total + ' sheet(s) → full table below with mistake check.';
+    document.getElementById('docBox').scrollIntoView();
+  }
+  function settingsInit() {
+    try {
+      const admin = JSON.parse(localStorage.getItem(ADMIN_KEY));
+      if (admin && admin.email) document.getElementById('adminEmail').value = admin.email;
+      const em = JSON.parse(localStorage.getItem(EMAIL_KEY));
+      if (em) {
+        if (em.sender) document.getElementById('sysEmail').value = em.sender;
+        if (em.alerts) document.getElementById('alertEmail').value = em.alerts;
+      }
+    } catch {}
+    renderStaff();
+  }
+</script>
+<script>
+  if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {})); }
+</script>
+</body>
+</html>

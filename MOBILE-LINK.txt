@@ -1,0 +1,13 @@
+NANCY WORK SYSTEM — MOBILE DOWNLOAD LINK
+==========================================
+Open this link on your mobile phone:
+
+  https://spotty-ducks-cheat.loca.lt
+
+Or scan mobile-link-qr.png with your phone camera.
+
+Then in Chrome tap menu (⋮) > "Install app" (or "Add to Home screen").
+The app installs with the Nancy logo and works offline afterwards.
+
+IMPORTANT: keep this PC on with internet while installing —
+the link is served live from this computer.

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#7c3aed" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Nancy System" />
+<title>Nancy's System — Dashboard</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f3f4f6; min-height: 100vh; display: flex; }
+  .sidebar {
+    width: 240px;
+    min-height: 100vh;
+    background: linear-gradient(180deg, #4c1d95, #7c3aed 60%, #ec4899);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 16px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+  .brand-left { display: flex; align-items: center; gap: 10px; padding: 4px 8px 16px; border-bottom: 1px solid rgba(255,255,255,.2); }
+  .brand-left img { width: 52px; height: 52px; border-radius: 12px; background: white; object-fit: contain; padding: 2px; }
+  .brand-left h2 { font-size: 17px; line-height: 1.2; }
+  nav { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; flex: 1; }
+  nav a {
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 15px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: .9;
+  }
+  nav a:hover { background: rgba(255,255,255,.15); opacity: 1; }
+  nav a.active { background: white; color: #4c1d95; }
+  .logout {
+    color: white; text-decoration: none; font-weight: 600;
+    border: 1px solid rgba(255,255,255,.6);
+    padding: 10px 14px; border-radius: 10px; text-align: center;
+    margin-top: 16px;
+  }
+  .logout:hover { background: rgba(255,255,255,.15); }
+  .content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  main { padding: 28px; max-width: 1000px; width: 100%; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 18px; }
+  .card { background: white; padding: 24px; border-radius: 14px; box-shadow: 0 4px 14px rgba(0,0,0,.06); }
+  .card h3 { color: #4c1d95; margin-bottom: 8px; }
+  .db-box { background: white; border-radius: 14px; box-shadow: 0 4px 14px rgba(0,0,0,.06); margin-top: 20px; overflow: auto; }
+  .db-head { padding: 18px 20px; border-bottom: 1px solid #e5e7eb; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .db-head input { padding: 10px 14px; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 14px; width: 280px; max-width: 100%; outline: none; }
+  .db-head input:focus { border-color: #7c3aed; }
+  table { width: 100%; min-width: 950px; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #f1f1f1; }
+  th { background: #f9fafb; color: #4c1d95; white-space: nowrap; }
+  td input { width: 80px; padding: 6px 8px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 13px; outline: none; }
+  td input:focus { border-color: #7c3aed; }
+  td input.item-input { width: 160px; }
+  td .calc { color: #374151; }
+  .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .report-card { background: white; border-radius: 14px; box-shadow: 0 4px 14px rgba(0,0,0,.06); padding: 18px; }
+  .report-card h3 { color: #4c1d95; margin-bottom: 10px; font-size: 16px; }
+  .report-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
+  .btn-small { background: linear-gradient(90deg,#7c3aed,#ec4899); color: white; border: none; border-radius: 8px; padding: 10px 16px; font-weight: 700; cursor: pointer; }
+  @media (max-width: 900px) { .report-grid { grid-template-columns: 1fr; } }
+  #dbCount { color: #6b7280; font-size: 13px; }
+  @media (max-width: 750px) {
+    .sidebar { width: 72px; padding: 16px 10px; }
+    .brand-left h2, nav a span, .logout span { display: none; }
+    nav a { justify-content: center; font-size: 20px; }
+    .brand-left { justify-content: center; }
+  }
+</style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand-left"><img src="logo.png" alt="Logo" /><h2>Nancy's System</h2></div>
+    <nav>
+      <a href="system.html" class="active">📊 <span>Dashboard</span></a>
+      <a href="#drinks">🥤 <span>Drinks</span></a>
+      <a href="reports.html">📝 <span>Reports</span></a>
+      <a href="ai.html">🤖 <span>AI Predictor</span></a>
+      <a href="upload.html">📤 <span>Upload & Scan</span></a>
+      <a href="scanned-data.html">📑 <span>Scanned Data</span></a>
+      <a href="formulas.html">🧮 <span>Formulas</span></a>
+      <a href="settings.html">⚙️ <span>Settings</span></a>
+    </nav>
+    <a class="logout" href="index.html">⏻ <span>Logout</span></a>
+  </aside>
+  <div class="content">
+    <main>
+      <h1 id="welcome">Welcome to the System</h1>
+      <p style="color:#6b7280;margin:8px 0 0;">You are now logged in.</p>
+      <div class="cards">
+        <div class="card"><h3>Dashboard</h3><p>Overview & stats</p></div>
+        <div class="card"><h3>Drinks</h3><p id="drinkTotal">Loading...</p></div>
+        <div class="card"><h3>Reports</h3><p><a href="reports.html">Open Reports Analysis →</a></p></div>
+        <div class="card"><h3>Settings</h3><p>System preferences</p></div>
+      </div>
+      <div class="db-box" id="drinks">
+        <div class="db-head">
+          <div><h2>Drinks Database</h2><span id="dbCount"></span></div>
+          <div class="report-row">
+            <input id="search" type="text" placeholder="Search drink name..." oninput="filterDrinks()" style="width:200px;" />
+            <input type="date" id="repDate" style="width:auto;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;" />
+            <button class="btn-small" onclick="saveDay()">Save day</button>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th>No</th><th>Item</th><th>Opening</th><th>Add</th><th>Total</th><th>Closing</th><th>Sales</th><th>Price</th><th>Amount</th></tr></thead>
+          <tbody id="drinkRows"><tr><td colspan="9">Loading...</td></tr></tbody>
+        </table>
+        <datalist id="drinkNames"></datalist>
+      </div>
+    </main>
+  </div>
+<script src="drinks.js"></script>
+<script>
+  const user = sessionStorage.getItem('nancy_user') || localStorage.getItem('nancy_user');
+  if (user) {
+    document.getElementById('welcome').textContent = 'Welcome, ' + user;
+  }
+  let allDrinks = (typeof ALL_DRINKS !== 'undefined') ? ALL_DRINKS : [];
+  if (allDrinks.length > 0) {
+    renderDrinks(allDrinks);
+    document.getElementById('drinkTotal').textContent = allDrinks.length + ' items in stock sheet';
+  } else {
+    fetch('drinks.json').then(r => r.json()).then(data => {
+      allDrinks = data;
+      renderDrinks(allDrinks);
+      document.getElementById('drinkTotal').textContent = allDrinks.length + ' items in stock sheet';
+    }).catch(() => {
+      document.getElementById('drinkRows').innerHTML = '<tr><td colspan="9">Could not load drinks database</td></tr>';
+      document.getElementById('drinkTotal').textContent = 'Database not loaded';
+    });
+  }
+  function num(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+  function calcRow(row) {
+    const opening = num(row.querySelector('.c-open').value);
+    const add = num(row.querySelector('.c-add').value);
+    const closing = num(row.querySelector('.c-close').value);
+    const price = num(row.querySelector('.c-price').value);
+    const total = opening + add;
+    const sales = total - closing;
+    row.querySelector('.c-total').textContent = total;
+    row.querySelector('.c-sales').textContent = sales;
+    row.querySelector('.c-amount').textContent = sales * price;
+  }
+  document.getElementById('drinkRows').addEventListener('input', e => {
+    const row = e.target.closest('tr');
+    if (!row) return;
+    if (e.target.classList.contains('item-input')) autofillPrice(row);
+    calcRow(row);
+  });
+  function autofillPrice(row) {
+    const inp = row.querySelector('.item-input');
+    if (!inp) return;
+    const q = inp.value.trim().toLowerCase();
+    if (!q) return;
+    const match = allDrinks.find(d => d.name.toLowerCase() === q);
+    if (match && (match.price !== null && match.price !== undefined)) {
+      row.querySelector('.c-price').value = match.price;
+    }
+  }
+  function renderDrinks(list) {
+    document.getElementById('dbCount').textContent = list.length + ' records + 9 blank rows';
+    let html = list.map(d => '<tr data-id="' + d.id + '">' +
+      '<td>' + d.id + '</td>' +
+      '<td>' + d.name + '</td>' +
+      '<td><input class="c-open" type="number" min="0" /></td>' +
+      '<td><input class="c-add" type="number" min="0" /></td>' +
+      '<td class="calc c-total">0</td>' +
+      '<td><input class="c-close" type="number" min="0" /></td>' +
+      '<td class="calc c-sales">0</td>' +
+      '<td><input class="c-price" type="number" min="0" value="' + (d.price === null || d.price === undefined ? '' : d.price) + '" /></td>' +
+      '<td class="calc c-amount">0</td>' +
+      '</tr>').join('');
+    for (let i = 1; i <= 9; i++) {
+      html += '<tr>' +
+        '<td></td>' +
+        '<td><input class="item-input" list="drinkNames" type="text" placeholder="Type item name..." /></td>' +
+        '<td><input class="c-open" type="number" min="0" /></td>' +
+        '<td><input class="c-add" type="number" min="0" /></td>' +
+        '<td class="calc c-total">0</td>' +
+        '<td><input class="c-close" type="number" min="0" /></td>' +
+        '<td class="calc c-sales">0</td>' +
+        '<td><input class="c-price" type="number" min="0" /></td>' +
+        '<td class="calc c-amount">0</td>' +
+        '</tr>';
+    }
+    document.getElementById('drinkRows').innerHTML = html;
+    document.getElementById('drinkNames').innerHTML = allDrinks.map(d => '<option value="' + d.name + '">').join('');
+  }
+  function filterDrinks() {
+    const q = document.getElementById('search').value.toLowerCase();
+    renderDrinks(allDrinks.filter(d => d.name.toLowerCase().includes(q) || String(d.id) === q));
+  }
+  function applyPendingPrices() {
+    let pending = null;
+    try { pending = JSON.parse(localStorage.getItem('nancy_pending_prices')); } catch {}
+    if (!pending) return;
+    let applied = 0;
+    document.querySelectorAll('#drinkRows tr[data-id]').forEach(row => {
+      const id = row.getAttribute('data-id');
+      const p = pending[id];
+      if (p === undefined || p === '') return;
+      if (typeof p === 'object') {
+        if (p.price !== undefined && p.price !== '') row.querySelector('.c-price').value = p.price;
+        if (p.opening !== undefined && p.opening !== '') row.querySelector('.c-open').value = p.opening;
+        if (p.add !== undefined && p.add !== '') row.querySelector('.c-add').value = p.add;
+        if (p.closing !== undefined && p.closing !== '') row.querySelector('.c-close').value = p.closing;
+      } else {
+        row.querySelector('.c-price').value = p;
+      }
+      calcRow(row);
+      applied++;
+    });
+    localStorage.removeItem('nancy_pending_prices');
+    if (applied) alert('Applied ' + applied + ' scanned rows from Upload & Scan.');
+  }
+  const LS_KEY = 'nancy_stock_days';
+  function loadDays() { try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch { return {}; } }
+  function storeDays(d) { localStorage.setItem(LS_KEY, JSON.stringify(d)); }
+  function seedDemo() {
+    const days = loadDays();
+    if (Object.keys(days).length > 0 || allDrinks.length === 0) return;
+    for (let i = 6; i >= 0; i--) {
+      const dt = new Date(); dt.setDate(dt.getDate() - i);
+      const key = dt.toISOString().slice(0, 10);
+      const opening = {}, closing = {};
+      allDrinks.slice(0, 30).forEach(d => {
+        const base = 10 + (d.id % 35);
+        opening[d.id] = base + (i % 5);
+        closing[d.id] = Math.max(0, base - i - (d.id % 7));
+      });
+      days[key] = { opening, closing };
+    }
+    storeDays(days);
+  }
+  function saveDay() {
+    const date = document.getElementById('repDate').value || new Date().toISOString().slice(0, 10);
+    const days = loadDays();
+    const opening = {}, closing = {};
+    document.querySelectorAll('#drinkRows tr[data-id]').forEach(row => {
+      const id = row.getAttribute('data-id');
+      const o = parseFloat(row.querySelector('.c-open').value);
+      const c = parseFloat(row.querySelector('.c-close').value);
+      if (!isNaN(o)) opening[id] = o;
+      if (!isNaN(c)) closing[id] = c;
+    });
+    days[date] = { opening, closing };
+    storeDays(days);
+    alert('Saved ' + date + '. View charts in Reports page.');
+  }
+  seedDemo();
+  document.getElementById('repDate').value = new Date().toISOString().slice(0, 10);
+  applyPendingPrices();
+</script>
+<script>
+  if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {})); }
+</script>
+</body>
+</html>

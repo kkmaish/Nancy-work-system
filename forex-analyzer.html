@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Forex Market Analyzer Bot — MT5 / HFM Ready</title>
+<style>
+:root{--bg:#0b1220;--card:#111a2e;--card2:#0e1628;--line:#1e2b45;--txt:#e5eaf5;--mut:#8b98b8;--green:#16c784;--red:#ea3943;--gold:#f0b90b;--blue:#3861fb}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+header{position:sticky;top:0;z-index:10;background:#0d1528;border-bottom:1px solid var(--line);padding:12px 18px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.logo{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#3861fb,#16c784);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:20px}
+h1{font-size:18px}h1 small{display:block;font-size:11px;color:var(--mut);font-weight:400}
+.badge{font-size:11px;padding:3px 9px;border-radius:20px;background:#16223d;border:1px solid var(--line);color:var(--mut)}
+.badge.live{color:var(--green);border-color:var(--green)}
+.badge.sim{color:var(--gold);border-color:var(--gold)}
+main{max-width:1280px;margin:0 auto;padding:16px;display:grid;grid-template-columns:1fr 340px;gap:14px}
+@media(max-width:1000px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin-bottom:10px}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+select,input,button,textarea{font-family:inherit}
+select,input[type=number],input[type=text]{background:#0b1326;border:1px solid var(--line);color:var(--txt);padding:8px 10px;border-radius:8px;font-size:13px}
+button{background:var(--blue);border:none;color:#fff;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}
+button.ghost{background:#1a2540}button.green{background:var(--green)}button.red{background:var(--red)}button.gold{background:var(--gold);color:#111}
+button:hover{opacity:.9}
+.ticker{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.price{font-size:28px;font-weight:800;font-variant-numeric:tabular-nums}
+.chg-up{color:var(--green)}.chg-dn{color:var(--red)}
+#chart{width:100%;height:340px;background:#070d1a;border:1px solid var(--line);border-radius:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:600px){.grid2{grid-template-columns:1fr}}
+.ind{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px}
+.ind .v{font-size:19px;font-weight:800}.ind .l{font-size:11px;color:var(--mut)}
+.signal-box{text-align:center;padding:16px;border-radius:12px;background:#070d1a;border:1px solid var(--line)}
+.signal-box .sig{font-size:32px;font-weight:900;letter-spacing:.05em}
+.sig.BUY{color:var(--green)}.sig.SELL{color:var(--red)}.sig.NEUTRAL{color:var(--gold)}
+.bar{height:10px;background:#1a2540;border-radius:6px;overflow:hidden;margin:10px 0}
+.bar i{display:block;height:100%;transition:width .5s}
+.reasons{font-size:12px;text-align:left;color:#c6d0e8;line-height:1.6}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left}
+th{color:var(--mut);font-size:11px;text-transform:uppercase}
+.impact-HIGH{color:var(--red);font-weight:800}.impact-MED{color:var(--gold)}.impact-LOW{color:var(--mut)}
+#eaCode{background:#070d1a;color:#9ef0c6;font-family:Consolas,monospace;font-size:11px;padding:12px;border-radius:10px;white-space:pre;overflow:auto;max-height:380px;border:1px solid var(--line)}
+.log{font-size:12px;max-height:180px;overflow:auto;line-height:1.7}
+.log div{border-bottom:1px dashed #1c2947;padding:3px 0}
+footer{text-align:center;color:var(--mut);font-size:11px;padding:18px}
+.pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700}
+.pill.bull{background:rgba(22,199,132,.15);color:var(--green)}.pill.bear{background:rgba(234,57,67,.15);color:var(--red)}.pill.flat{background:rgba(240,185,11,.15);color:var(--gold)}
+small.hint{color:var(--mut);font-size:11px}
+.tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.tabs button{padding:6px 12px;font-size:12px}
+.tabs button.active{background:var(--green)}
+</style>
+</head>
+<body>
+<header>
+<div class="logo">$</div>
+<h1>Forex Market Analyzer Bot <small>MT5 · HFM compatible · RSI / MACD / Volume / Signals / EA Builder</small></h1>
+<span id="connBadge" class="badge sim">● SIM FEED</span>
+<span class="badge" id="sessionBadge">Session: —</span>
+<span class="badge" id="spreadBadge">Spread: —</span>
+</header>
+
+<main>
+<div>
+  <div class="card">
+    <h2>Market Controls</h2>
+    <div class="controls">
+      <select id="symbol"></select>
+      <select id="tf">
+        <option value="1">M1</option><option value="5" selected>M5</option><option value="15">M15</option><option value="60">H1</option><option value="240">H4</option><option value="1440">D1</option>
+      </select>
+      <select id="source">
+        <option value="live">Live API (free, no key)</option>
+        <option value="sim" selected>Simulated MT5 ticks (offline)</option>
+        <option value="csv">MT5 CSV upload</option>
+      </select>
+      <input type="file" id="csvFile" accept=".csv" style="display:none" />
+      <button class="ghost" id="btnTick">New tick now</button>
+      <button class="ghost" id="btnReset">Reset history</button>
+    </div>
+    <div class="ticker">
+      <div><div class="l" style="font-size:11px;color:var(--mut)">BID / ASK</div><div class="price"><span id="bid">—</span> <small style="font-size:13px;color:var(--mut)">/ <span id="ask">—</span></small></div></div>
+      <div><div style="font-size:11px;color:var(--mut)">24H CHANGE</div><div id="chg" style="font-weight:800">—</div></div>
+      <div><div style="font-size:11px;color:var(--mut)">ATR / VOLATILITY</div><div id="atrTop" style="font-weight:800">—</div></div>
+      <div><div style="font-size:11px;color:var(--mut)">TREND (EMA20/50)</div><div id="trendTop">—</div></div>
+    </div>
+    <div style="margin-top:10px"><canvas id="chart" width="900" height="340"></canvas>
+    <small class="hint">Candles + EMA20 (blue) / EMA50 (orange) · bottom bars = tick volume · works offline; Live API refreshes base price every 60s.</small></div>
+  </div>
+
+  <div class="card">
+    <h2>Technical Indicators</h2>
+    <div class="grid2">
+      <div class="ind"><div class="l">RSI (14)</div><div class="v" id="rsi">—</div><div class="l" id="rsiS">—</div></div>
+      <div class="ind"><div class="l">MACD (12,26,9)</div><div class="v" id="macd">—</div><div class="l" id="macdS">—</div></div>
+      <div class="ind"><div class="l">STOCHASTIC (14,3)</div><div class="v" id="stoch">—</div><div class="l" id="stochS">—</div></div>
+      <div class="ind"><div class="l">BOLLINGER (20,2)</div><div class="v" id="bb">—</div><div class="l" id="bbS">—</div></div>
+      <div class="ind"><div class="l">EMA 20 / 50</div><div class="v" id="ema">—</div><div class="l" id="emaS">—</div></div>
+      <div class="ind"><div class="l">VOLUME ANALYZER</div><div class="v" id="vol">—</div><div class="l" id="volS">—</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Economic Calendar (High impact — manual + auto)</h2>
+    <div class="tabs">
+      <button class="active" data-cal="all">All</button><button data-cal="USD">USD</button><button data-cal="EUR">EUR</button><button data-cal="GBP">GBP</button><button data-cal="JPY">JPY</button><button data-cal="XAU">XAU</button>
+    </div>
+    <table id="calTable"><thead><tr><th>Date (UTC)</th><th>CCY</th><th>Event</th><th>Impact</th><th>Bias</th></tr></thead><tbody></tbody></table>
+    <small class="hint">Bias column shows expected direction for USD-pairs if actual &gt; forecast. Avoid trading 15 min before/after HIGH events — EA has news filter for this.</small>
+  </div>
+
+  <div class="card">
+    <h2>MT5 / HFM Bridge + Expert Advisor (MQL5) Builder</h2>
+    <div class="grid2">
+      <div>
+        <label style="font-size:12px">Lot <input type="number" id="eaLot" value="0.10" step="0.01" style="width:80px"></label>
+        <label style="font-size:12px"> SL pips <input type="number" id="eaSL" value="30" style="width:70px"></label>
+        <label style="font-size:12px"> TP pips <input type="number" id="eaTP" value="60" style="width:70px"></label><br/><br/>
+        <label style="font-size:12px">RSI period <input type="number" id="eaRSI" value="14" style="width:60px"></label>
+        <label style="font-size:12px">RSI Buy &lt; <input type="number" id="eaRSIBuy" value="30" style="width:60px"></label>
+        <label style="font-size:12px">RSI Sell &gt; <input type="number" id="eaRSISell" value="70" style="width:60px"></label><br/><br/>
+        <label style="font-size:12px"><input type="checkbox" id="eaMACD" checked> Require MACD confirm</label><br/>
+        <label style="font-size:12px"><input type="checkbox" id="eaEMA" checked> Require EMA20&gt;EMA50 for buys</label><br/>
+        <label style="font-size:12px"><input type="checkbox" id="eaNews" checked> News filter (block HIGH ±15min)</label><br/><br/>
+        <div class="controls"><button class="green" id="btnGenEA">Generate MQL5 EA</button><button class="ghost" id="btnCopyEA">Copy</button><button class="gold" id="btnDlEA">Download .mq5</button></div>
+        <small class="hint">Install: MT5 → File → Open Data Folder → MQL5/Experts → paste file → Compile (F4) → drag onto HFM chart (e.g. EURUSD). HFM servers: HFMarkets-Live / HFMarkets-Demo. Enable Algo Trading + WebRequest to open.er-api.com if using live mode.</small>
+      </div>
+      <div>
+        <h2>MT5 CSV bridge</h2>
+        <p style="font-size:12px;color:#c6d0e8;line-height:1.6">In MT5: open pair → F12 → export M1 bars as CSV (<code>time,open,high,low,close,tickvol</code>), then load via Source = MT5 CSV upload. Analyzer recomputes RSI/MACD/signals on your real HFM feed.<br/><br/>HFM specs: Forex 1 lot = 100,000 · Gold 1 lot = 100 oz · typical spread EURUSD 0.1–0.3 pips (Zero/Pro), XAUUSD ~12–18 cents. Risk calc is on the right.</p>
+      </div>
+    </div>
+    <div id="eaCode">// Click Generate MQL5 EA — code appears here, synced to your indicator settings.</div>
+  </div>
+</div>
+
+<div>
+  <div class="card signal-box">
+    <h2>Auto Signal Engine</h2>
+    <div class="sig NEUTRAL" id="sig">NEUTRAL</div>
+    <div style="font-size:13px">Score <b id="score">0</b>/100 · Strength <b id="strength">—</b></div>
+    <div class="bar"><i id="scoreBar" style="width:0%;background:var(--gold)"></i></div>
+    <div class="reasons" id="reasons">Waiting for ticks…</div>
+    <div class="controls" style="justify-content:center;margin-top:10px">
+      <button class="ghost" id="btnAlert">🔔 Alerts: OFF</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Risk Calculator (HFM)</h2>
+    <label style="font-size:12px">Balance $<input type="number" id="bal" value="1000" style="width:90px"></label>
+    <label style="font-size:12px">Risk %<input type="number" id="risk" value="1" style="width:60px"></label>
+    <label style="font-size:12px">SL pips<input type="number" id="slp" value="30" style="width:60px"></label>
+    <div style="margin-top:8px;font-size:13px">Allowed lot: <b id="lotOut">—</b><br/><small class="hint" id="riskOut"></small></div>
+  </div>
+
+  <div class="card">
+    <h2>Signal / Alert Log</h2>
+    <div class="log" id="log"></div>
+    <div class="controls" style="margin-top:8px"><button class="ghost" id="btnClearLog">Clear</button></div>
+  </div>
+
+  <div class="card">
+    <h2>HFM Spreads (typical)</h2>
+    <table><thead><tr><th>Symbol</th><th>Spread</th></tr></thead><tbody id="spreadTable"></tbody></table>
+  </div>
+</div>
+</main>
+<footer>Educational tool — not financial advice. Forex/CFDs carry risk. Test EA on HFM Demo before live. · <a href="ForexSignalEA.mq5" style="color:#8b98b8">ForexSignalEA.mq5</a></footer>
+
+<script>
+"use strict";
+/* ============ CONFIG ============ */
+const SYMBOLS=[
+ {s:"EURUSD",base:1.0850,spread:0.00018,dig:5},
+ {s:"GBPUSD",base:1.2700,spread:0.00028,dig:5},
+ {s:"USDJPY",base:151.20,spread:0.022,dig:3},
+ {s:"USDCHF",base:0.9040,spread:0.00025,dig:5},
+ {s:"AUDUSD",base:0.6580,spread:0.00025,dig:5},
+ {s:"USDCAD",base:1.3590,spread:0.00030,dig:5},
+ {s:"NZDUSD",base:0.5980,spread:0.00032,dig:5},
+ {s:"EURGBP",base:0.8540,spread:0.00028,dig:5},
+ {s:"EURJPY",base:164.10,spread:0.030,dig:3},
+ {s:"GBPJPY",base:192.10,spread:0.045,dig:3},
+ {s:"XAUUSD",base:2385.0,spread:0.18,dig:2},
+ {s:"XAGUSD",base:28.20,spread:0.025,dig:3},
+ {s:"BTCUSD",base:67000,spread:25,dig:0},
+];
+const CAL=[
+ {d:"2026-09-24 12:30",ccy:"USD",ev:"US Durable Goods Orders",imp:"MED",bias:"USD+"},
+ {d:"2026-09-24 14:00",ccy:"USD",ev:"New Home Sales",imp:"MED",bias:"USD+"},
+ {d:"2026-09-25 12:30",ccy:"USD",ev:"US GDP Final q/q",imp:"HIGH",bias:"USD+"},
+ {d:"2026-09-26 12:30",ccy:"USD",ev:"Core PCE Price Index m/m",imp:"HIGH",bias:"USD+ / XAU-"},
+ {d:"2026-09-25 11:00",ccy:"EUR",ev:"ECB President Speech",imp:"HIGH",bias:"EUR±"},
+ {d:"2026-09-26 06:00",ccy:"GBP",ev:"UK Retail Sales m/m",imp:"MED",bias:"GBP+"},
+ {d:"2026-09-25 23:30",ccy:"JPY",ev:"Tokyo CPI y/y",imp:"MED",bias:"JPY+"},
+ {d:"2026-09-26 13:00",ccy:"XAU",ev:"Gold: PCE reaction watch",imp:"HIGH",bias:"XAU flips on USD"},
+];
+/* ============ STATE ============ */
+let symbol=SYMBOLS[0], candles=[], price=symbol.base, tickN=0, lastSig="NEUTRAL", alertsOn=false, calFilter="all", liveBase=null;
+const $=id=>document.getElementById(id);
+const sel=$("symbol"); SYMBOLS.forEach(o=>{const e=document.createElement("option");e.value=o.s;e.textContent=o.s+" (HFM)";sel.appendChild(e);});
+$("spreadTable").innerHTML=SYMBOLS.map(o=>`<tr><td>${o.s}</td><td>${o.spread}</td></tr>`).join("");
+function renderCal(){const tb=document.querySelector("#calTable tbody");tb.innerHTML=CAL.filter(c=>calFilter==="all"||c.ccy===calFilter).map(c=>`<tr><td>${c.d}</td><td>${c.ccy}</td><td>${c.ev}</td><td class="impact-${c.imp==="HIGH"?"HIGH":c.imp==="MED"?"MED":"LOW"}">${c.imp}</td><td>${c.bias}</td></tr>`).join("");}
+renderCal();
+document.querySelectorAll("[data-cal]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-cal]").forEach(x=>x.classList.remove("active"));b.classList.add("active");calFilter=b.dataset.cal;renderCal();});
+
+/* ============ DATA: sim + live + csv ============ */
+function seed(){candles=[];price=symbol.base;let p=price;for(let i=0;i<120;i++){const o=p;const drift=(Math.random()-0.5)*symbol.base*0.0012;const c=o+drift;const h=Math.max(o,c)+Math.random()*symbol.base*0.0004;const l=Math.min(o,c)-Math.random()*symbol.base*0.0004;const v=Math.round(40+Math.random()*120+(Math.abs(c-o)/(symbol.base*0.0004))*30);candles.push({o,h,l,c,v});p=c;}price=p;}
+seed();
+async function fetchLive(){try{const r=await fetch("https://open.er-api.com/v6/latest/USD");const j=await r.json();if(j&&j.rates){liveBase=j.rates;$("connBadge").textContent="● LIVE API";$("connBadge").className="badge live";applyLive();return;}}catch(e){}$("connBadge").textContent="● SIM FEED";$("connBadge").className="badge sim";}
+function crossRate(sym){if(!liveBase)return null;try{
+ if(sym==="XAUUSD"||sym==="XAGUSD"||sym==="BTCUSD")return null;
+ if(sym.endsWith("USD")){const b=sym.slice(0,3);return b==="USD"?1:1/(liveBase[b]||0)||null;}
+ if(sym.startsWith("USD")){const q=sym.slice(3);return liveBase[q]||null;}
+ const b=sym.slice(0,3),q=sym.slice(3);const rb=liveBase[b],rq=liveBase[q];if(!rb||!rq)return null;return rq/rb;
+}catch(e){return null;}}
+function applyLive(){const r=crossRate(symbol.s);if(r){const last=candles[candles.length-1].c;const anchored=last*0.7+r*0.3;const k=anchored/last;candles.forEach(c=>{c.o*=k;c.h*=k;c.l*=k;c.c*=k;});price=candles[candles.length-1].c;}}
+setInterval(()=>{if($("source").value==="live")fetchLive();},60000);fetchLive();
+function tick(){
+ tickN++;
+ const vol=symbol.base*0.00045;
+ let move=(Math.random()-0.5)*2*vol;
+ // mean-revert slightly + trend push from EMA
+ const e20=ema(closes(),20),e50=ema(closes(),50);
+ if(e20&&e50){move+=(e20>e50?vol*0.12:-vol*0.12);}
+ price=Math.max(price+move,symbol.base*0.5);
+ let cur=candles[candles.length-1];
+ cur.c=price;cur.h=Math.max(cur.h,price);cur.l=Math.min(cur.l,price);cur.v+=Math.round(Math.random()*18+Math.abs(move)/vol*10);
+ if(tickN%8===0){candles.push({o:price,h:price,l:price,c:price,v:20+Math.round(Math.random()*20)});if(candles.length>140)candles.shift();}
+ update();
+}
+const closes=()=>candles.map(c=>c.c);
+/* ============ INDICATORS ============ */
+function ema(d,p){if(d.length<p)return null;const k=2/(p+1);let e=d.slice(0,p).reduce((a,b)=>a+b,0)/p;for(let i=p;i<d.length;i++)e=d[i]*k+e*(1-k);return e;}
+function sma(d,p){if(d.length<p)return null;return d.slice(-p).reduce((a,b)=>a+b,0)/p;}
+function rsi(d,p=14){if(d.length<p+1)return null;let g=0,l=0;for(let i=d.length-p;i<d.length;i++){const ch=d[i]-d[i-1];if(ch>0)g+=ch;else l-=ch;}if(l===0)return 100;const rs=g/l;return 100-100/(1+rs);}
+function macd(d){const e12=ema(d,12),e26=ema(d,26);if(e12==null||e26==null)return null;const line=e12-e26;
+ // signal: ema of macd history (approx using last 35 lines)
+ const hist=[];for(let i=26;i<=d.length;i++){const a=ema(d.slice(0,i),12),b=ema(d.slice(0,i),26);if(a!=null&&b!=null)hist.push(a-b);}
+ const sig=ema(hist,9);return{line,sig:sig==null?line:sig,hist:line-(sig==null?line:sig)};}
+function stoch(){if(candles.length<14)return null;const w=candles.slice(-14);const hh=Math.max(...w.map(c=>c.h)),ll=Math.min(...w.map(c=>c.l));if(hh===ll)return 50;return (price-ll)/(hh-ll)*100;}
+function boll(d,p=20,m=2){const s=sma(d,p);if(s==null)return null;const w=d.slice(-p);const sd=Math.sqrt(w.reduce((a,b)=>a+(b-s)*(b-s),0)/p);return{mid:s,up:s+m*sd,dn:s-m*sd,bw:(2*m*sd)/s};}
+function atr(){if(candles.length<15)return null;let s=0;for(let i=candles.length-14;i<candles.length;i++){s+=candles[i].h-candles[i].l;}return s/14;}
+/* ============ SIGNAL ENGINE ============ */
+function signal(){
+ const c=closes();const r=rsi(c,14),m=macd(c),st=stoch(),b=boll(c),e20=ema(c,20),e50=ema(c,50),a=atr();
+ const vols=candles.map(x=>x.v);const vA=sma(vols,20);const vC=vols[vols.length-1];const vR=vC/(vA||1);
+ let score=50;const why=[];
+ if(r!=null){if(r<30){score+=18;why.push(`RSI ${r.toFixed(1)} oversold → +buy`);}else if(r>70){score-=18;why.push(`RSI ${r.toFixed(1)} overbought → +sell`);}else if(r<45){score+=5;why.push(`RSI ${r.toFixed(1)} soft-bullish`);}else if(r>55){score-=5;why.push(`RSI ${r.toFixed(1)} soft-bearish`);}else why.push(`RSI ${r.toFixed(1)} neutral`);}
+ if(m){if(m.hist>0){score+=14;why.push(`MACD hist +${m.hist.toExponential(1)} bullish`);}else{score-=14;why.push(`MACD hist ${m.hist.toExponential(1)} bearish`);}}
+ if(e20&&e50){if(e20>e50){score+=12;why.push(`EMA20>EMA50 uptrend`);}else{score-=12;why.push(`EMA20<EMA50 downtrend`);}}
+ if(st!=null){if(st<20){score+=8;why.push(`Stoch ${st.toFixed(0)} oversold`);}else if(st>80){score-=8;why.push(`Stoch ${st.toFixed(0)} overbought`);}}
+ if(b){const pos=(price-b.dn)/(b.up-b.dn);if(pos>0.85){score-=6;why.push(`Price at upper Bollinger`);}else if(pos<0.15){score+=6;why.push(`Price at lower Bollinger`);}}
+ if(vR>1.5){score+= (score>=50?4:-4);why.push(`Volume spike ×${vR.toFixed(2)} confirms move`);}else if(vR<0.6){why.push(`Low volume ×${vR.toFixed(2)} — weak conviction`);}else why.push(`Volume normal ×${vR.toFixed(2)}`);
+ score=Math.max(0,Math.min(100,Math.round(score)));
+ const sig=score>=60?"BUY":score<=40?"SELL":"NEUTRAL";
+ return{sig,score,r,m,st,b,e20,e50,a,vR,why};
+}
+/* ============ RENDER ============ */
+const cv=$("chart"),ctx=cv.getContext("2d");
+function draw(){
+ const W=cv.width,H=cv.height;ctx.clearRect(0,0,W,H);
+ const N=60,data=candles.slice(-N);
+ const all=data.flatMap(c=>[c.h,c.l]);let mn=Math.min(...all),mx=Math.max(...all);const pad=(mx-mn)*0.12||1;mn-=pad;mx+=pad;
+ const X=i=>10+i*(W-20)/N, Y=p=>H-30-((p-mn)/(mx-mn))*(H-60);
+ const cw=(W-20)/N*0.62;
+ data.forEach((c,i)=>{const up=c.c>=c.o;ctx.strokeStyle=up?"#16c784":"#ea3943";ctx.fillStyle=up?"#16c784":"#ea3943";
+  ctx.beginPath();ctx.moveTo(X(i),Y(c.h));ctx.lineTo(X(i),Y(c.l));ctx.stroke();
+  const yO=Y(c.o),yC=Y(c.c);ctx.fillRect(X(i)-cw/2,Math.min(yO,yC),cw,Math.max(2,Math.abs(yO-yC)));});
+ // EMAs
+ const c=closes();[[20,"#3861fb"],[50,"#f0b90b"]].forEach(([p,col])=>{ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.beginPath();let st=false;
+  for(let i=Math.max(0,c.length-N);i<c.length;i++){const e=ema(c.slice(0,i+1),p);if(e==null)continue;const x=X(i-(c.length-N));const y=Y(e);if(!st){ctx.moveTo(x,y);st=true;}else ctx.lineTo(x,y);}ctx.stroke();ctx.lineWidth=1;});
+ // volume
+ const vols=data.map(d=>d.v),vm=Math.max(...vols);
+ ctx.fillStyle="rgba(139,152,184,.45)";data.forEach((d,i)=>{const h=(d.v/vm)*44;ctx.fillRect(X(i)-cw/2,H-26-h,cw,h);});
+}
+function fmt(p){return p.toFixed(symbol.dig);}
+function update(){
+ const s=signal();
+ const spread=symbol.spread,bid=price-spread/2,ask=price+spread/2;
+ $("bid").textContent=fmt(bid);$("ask").textContent=fmt(ask);
+ const chg=(price-candles[0].o)/candles[0].o*100;
+ const chgE=$("chg");chgE.textContent=(chg>=0?"+":"")+chg.toFixed(2)+"%";chgE.className=chg>=0?"chg-up":"chg-dn";
+ $("atrTop").textContent=s.a!=null?s.a.toFixed(symbol.dig):"—";
+ $("trendTop").innerHTML=(s.e20&&s.e50)?(s.e20>s.e50?'<span class="pill bull">▲ BULL</span>':'<span class="pill bear">▼ BEAR</span>'):'<span class="pill flat">—</span>';
+ $("spreadBadge").textContent="Spread: "+symbol.spread+" ("+symbol.s+" HFM)";
+ $("rsi").textContent=s.r!=null?s.r.toFixed(1):"—";$("rsiS").textContent=s.r==null?"—":s.r<30?"Oversold → buy bias":s.r>70?"Overbought → sell bias":s.r<55?"Neutral-bull":"Neutral-bear";
+ $("rsi").style.color=s.r<30?"var(--green)":s.r>70?"var(--red)":"var(--txt)";
+ $("macd").textContent=s.m?`${s.m.line.toFixed(symbol.dig)} / sig ${s.m.sig.toFixed(symbol.dig)}`:"—";
+ $("macdS").textContent=s.m?(s.m.hist>0?"Bullish momentum":"Bearish momentum"):"—";
+ $("stoch").textContent=s.st!=null?s.st.toFixed(1):"—";$("stochS").textContent=s.st<20?"Oversold":s.st>80?"Overbought":"Neutral";
+ $("bb").textContent=s.b?`${s.b.dn.toFixed(symbol.dig)} – ${s.b.up.toFixed(symbol.dig)}`:"—";
+ $("bbS").textContent=s.b?("Width "+(s.b.bw*100).toFixed(2)+"%"+(s.b.bw>0.01?" (volatile)":" (squeeze)")):"—";
+ $("ema").textContent=(s.e20&&s.e50)?`${s.e20.toFixed(symbol.dig)} / ${s.e50.toFixed(symbol.dig)}`:"—";
+ $("emaS").textContent=(s.e20&&s.e50)?(s.e20>s.e50?"Uptrend":"Downtrend"):"—";
+ $("vol").textContent="×"+s.vR.toFixed(2);$("volS").textContent=s.vR>1.5?"High conviction":s.vR<0.6?"Thin / avoid":"Normal";
+ const sigE=$("sig");sigE.textContent=s.sig;sigE.className="sig "+s.sig;
+ $("score").textContent=s.score;
+ $("strength").textContent=s.score>=75?"STRONG":s.score>=60?"MODERATE":s.score<=25?"STRONG":s.score<=40?"MODERATE":"WEAK";
+ const bar=$("scoreBar");bar.style.width=s.score+"%";bar.style.background=s.sig==="BUY"?"var(--green)":s.sig==="SELL"?"var(--red)":"var(--gold)";
+ $("reasons").innerHTML="• "+s.why.join("<br>• ");
+ draw();session();risk();
+ if(s.sig!==lastSig){log(`<b class="${s.sig==="BUY"?"chg-up":s.sig==="SELL"?"chg-dn":""}">${s.sig}</b> ${symbol.s} @ ${fmt(price)} · score ${s.score}`);
+  if(alertsOn&&(s.sig==="BUY"||s.sig==="SELL")){try{new Notification(`Forex Bot: ${s.sig} ${symbol.s}`,{body:`Score ${s.score} @ ${fmt(price)}`});}catch(e){}beep();}
+  lastSig=s.sig;}
+}
+function session(){const h=new Date().getUTCHours();let s="Closed / Asian";if(h>=7&&h<12)s="London";else if(h>=12&&h<17)s="London+NY overlap ⚡";else if(h>=17&&h<21)s="New York";$("sessionBadge").textContent="Session: "+s+" (UTC "+h+"h)";}
+function risk(){const bal=+$("bal").value||0,rk=+$("risk").value||0,sl=+$("slp").value||1;const cash=bal*rk/100;const pipVal=10; // $10 per pip per 1.0 lot on XXXUSD
+ const lot=cash/(sl*pipVal);$("lotOut").textContent=isFinite(lot)?lot.toFixed(2)+" lots":"—";$("riskOut").textContent=`Risking $${cash.toFixed(2)} on ${sl} pips SL`; }
+["bal","risk","slp"].forEach(id=>$(id).addEventListener("input",risk));
+function log(m){const d=document.createElement("div");d.innerHTML=`[${new Date().toLocaleTimeString()}] ${m}`;$("log").prepend(d);}
+function beep(){try{const a=new (window.AudioContext||window.webkitAudioContext)();const o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=880;g.gain.value=0.08;o.start();o.stop(a.currentTime+0.25);}catch(e){}}
+/* ============ EVENTS ============ */
+sel.onchange=()=>{symbol=SYMBOLS.find(o=>o.s===sel.value);seed();applyLive();update();log(`Switched to <b>${symbol.s}</b>`);};
+$("source").onchange=e=>{if(e.target.value==="csv")$("csvFile").click();if(e.target.value==="live")fetchLive();};
+$("csvFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{
+ const lines=r.result.split(/\r?\n/).filter(Boolean);const out=[];
+ for(const ln of lines.slice(0,500)){const p=ln.split(/[,;\t]/);if(p.length<6)continue;const o=+p[1],h=+p[2],l=+p[3],c=+p[4],v=+p[5]||50;if([o,h,l,c].every(isFinite))out.push({o,h,l,c,v});}
+ if(out.length>10){candles=out.slice(-140);price=candles[candles.length-1].c;$("source").value="csv";log(`Loaded ${out.length} MT5 bars from CSV`);update();}else log("CSV parse failed — need time,open,high,low,close,tickvol");
+}catch(err){log("CSV error: "+err.message)}};r.readAsText(f);};
+$("btnTick").onclick=()=>tick();
+$("btnReset").onclick=()=>{seed();update();log("History reset");};
+$("btnAlert").onclick=e=>{alertsOn=!alertsOn;e.target.textContent=`🔔 Alerts: ${alertsOn?"ON":"OFF"}`;if(alertsOn&&"Notification"in window)Notification.requestPermission();log("Alerts "+(alertsOn?"enabled":"disabled"));};
+$("btnClearLog").onclick=()=>$("log").innerHTML="";
+/* ============ EA BUILDER ============ */
+function eaCode(){
+ const lot=+$("eaLot").value||0.1,sl=+$("eaSL").value||30,tp=+$("eaTP").value||60;
+ const rsiP=+$("eaRSI").value||14,rb=+$("eaRSIBuy").value||30,rs=+$("eaRSISell").value||70;
+ const macdF=$("eaMACD").checked?"true":"false",emaF=$("eaEMA").checked?"true":"false",newsF=$("eaNews").checked?"true":"false";
+ return `//+------------------------------------------------------------------+
+//| ForexSignalEA.mq5 — generated by Forex Market Analyzer Bot      |
+//| Strategy: RSI(${rsiP}) + MACD + EMA20/50 + News filter           |
+//| Broker: HFM (works on any MT5). Test on DEMO first.             |
+//+------------------------------------------------------------------+
+#property copyright "Forex Analyzer Bot"
+#property version   "1.00"
+#include <Trade\\Trade.mqh>
+CTrade trade;
+input double InpLot      = ${lot};
+input int    InpSLpips   = ${sl};
+input int    InpTPpips   = ${tp};
+input int    InpRSI      = ${rsiP};
+input int    InpRSIBuy   = ${rb};
+input int    InpRSISell  = ${rs};
+input bool   InpUseMACD  = ${macdF};
+input bool   InpUseEMA   = ${emaF};
+input bool   InpNewsBlock= ${newsF};
+int hRSI,hMACD,hEMA20,hEMA50;
+int OnInit(){hRSI=iRSI(_Symbol,PERIOD_CURRENT,InpRSI,PRICE_CLOSE);
+ hMACD=iMACD(_Symbol,PERIOD_CURRENT,12,26,9,PRICE_CLOSE);
+ hEMA20=iMA(_Symbol,PERIOD_CURRENT,20,0,MODE_EMA,PRICE_CLOSE);
+ hEMA50=iMA(_Symbol,PERIOD_CURRENT,50,0,MODE_EMA,PRICE_CLOSE);
+ if(hRSI<0||hMACD<0||hEMA20<0||hEMA50<0) return INIT_FAILED;
+ trade.SetExpertMagicNumber(20260924);return INIT_SUCCEEDED;}
+bool HasPosition(){for(int i=PositionsTotal()-1;i>=0;i--){ulong t=PositionGetTicket(i);
+ if(t>0 && PositionGetString(POSITION_SYMBOL)==_Symbol) return true;}return false;}
+double Pip(){return (_Digits==3||_Digits==5)?_Point*10:_Point;}
+void OnTick(){
+ if(HasPosition()) return;
+ double r[];if(CopyBuffer(hRSI,0,1,1,r)<1) return;
+ double m[],s[];if(CopyBuffer(hMACD,0,1,1,m)<1) return;
+ if(CopyBuffer(hMACD,1,1,1,s)<1) return;
+ double e20[],e50[];if(CopyBuffer(hEMA20,0,1,1,e20)<1) return;
+ if(CopyBuffer(hEMA50,0,1,1,e50)<1) return;
+ bool bullMACD=m[0]>s[0], bearMACD=m[0]<s[0];
+ bool bullEMA=e20[0]>e50[0], bearEMA=e20[0]<e50[0];
+ // --- news filter: skip HIGH USD events +/-15min (extend with CalendarValueHistory) ---
+ datetime now=TimeTradeServer();
+ if(InpNewsBlock){MqlCalendarValue v[];int n=CalendarValueHistory(v,now-7*86400,now+86400,NULL,NULL);
+  for(int i=0;i<ArraySize(v);i++){MqlCalendarEvent ev;MqlCalendarCountry ct;
+   if(CalendarEventById(v[i].event_id,ev)&&CalendarCountryById(ev.country_id,ct)){
+    if(ev.importance==CALENDAR_IMPORTANCE_HIGH && (StringFind(ct.code,"US")>=0||StringFind(_Symbol,ct.code)>=0)){
+     if(MathAbs((long)v[i].time-(long)now)<15*60) return;}}}}
+ double ask=SymbolInfoDouble(_Symbol,SYMBOL_ASK),bid=SymbolInfoDouble(_Symbol,SYMBOL_BID);
+ double slP=InpSLpips*Pip(),tpP=InpTPpips*Pip();
+ bool buyOk=(r[0]<InpRSIBuy||(r[0]<50&&bullEMA))&&(!InpUseMACD||bullMACD)&&(!InpUseEMA||bullEMA);
+ bool sellOk=(r[0]>InpRSISell||(r[0]>50&&bearEMA))&&(!InpUseMACD||bearMACD)&&(!InpUseEMA||bearEMA);
+ if(buyOk) trade.Buy(InpLot,_Symbol,ask,ask-slP,ask+tpP,"AnalyzerBot BUY RSI "+DoubleToString(r[0],1));
+ else if(sellOk) trade.Sell(InpLot,_Symbol,bid,bid+slP,bid-tpP,"AnalyzerBot SELL RSI "+DoubleToString(r[0],1));
+}`;}
+$("btnGenEA").onclick=()=>{$("eaCode").textContent=eaCode();log("MQL5 EA code generated");};
+$("btnCopyEA").onclick=()=>{if($("eaCode").textContent.startsWith("//")){$("eaCode").textContent=eaCode();}navigator.clipboard.writeText($("eaCode").textContent).then(()=>log("EA code copied"));};
+$("btnDlEA").onclick=()=>{const code=$("eaCode").textContent.startsWith("//")?$("eaCode").textContent:eaCode();$("eaCode").textContent=code;
+ const b=new Blob([code],{type:"text/plain"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="ForexSignalEA.mq5";a.click();log("ForexSignalEA.mq5 downloaded");};
+/* ============ LOOP ============ */
+setInterval(tick,2000);update();risk();log("Analyzer bot started — sim ticks every 2s. Switch Source to Live API for real rates.");
+</script>
+</body>
+</html>

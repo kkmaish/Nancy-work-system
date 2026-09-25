@@ -1,0 +1,24 @@
+NANCY WORK SYSTEM — ANDROID APP GUIDE
+=========================================
+
+This machine has no Android SDK, so an .apk cannot be compiled here.
+Your system is already packaged as an installable app (PWA). Two routes:
+
+ROUTE A — INSTALL DIRECTLY ON ANDROID (free, 2 minutes, recommended)
+1. Put the 'nancy work system' folder online. Easiest free options:
+   - Netlify Drop: drag the folder onto app.netlify.com/drop
+   - Tiiny.host or GitHub Pages (upload the folder)
+2. On your Android phone, open the link in Chrome.
+3. Tap menu (⋮) > "Install app" (or "Add to Home screen").
+4. The Nancy System icon appears with your other apps and works offline.
+
+ROUTE B — REAL .APK FILE (via PWABuilder, free)
+1. Host the folder as in Route A step 1 to get an https:// link.
+2. Go to pwabuilder.com, enter the link, click Start.
+3. Download the Android package (.apk/.aab), copy to your phone, install.
+   (Phone may ask to allow "Install unknown apps" — allow it for this file.)
+
+NOTE: Service workers and install prompts require an https:// address,
+so the app must be hosted — it cannot install from phone-local files.
+Everything needed (manifest.json, icons, offline service worker sw.js)
+is already included in this folder.

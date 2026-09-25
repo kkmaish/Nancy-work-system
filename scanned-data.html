@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#7c3aed" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Nancy System" />
+<title>Nancy's System — Scanned Data</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f3f4f6; min-height: 100vh; display: flex; }
+  .sidebar { width: 240px; min-height: 100vh; background: linear-gradient(180deg, #4c1d95, #7c3aed 60%, #ec4899); color: white; display: flex; flex-direction: column; padding: 20px 16px; position: sticky; top: 0; height: 100vh; }
+  .brand-left { display: flex; align-items: center; gap: 10px; padding: 4px 8px 16px; border-bottom: 1px solid rgba(255,255,255,.2); }
+  .brand-left img { width: 52px; height: 52px; border-radius: 12px; background: white; object-fit: contain; padding: 2px; }
+  .brand-left h2 { font-size: 17px; line-height: 1.2; }
+  nav { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; flex: 1; }
+  nav a { color: white; text-decoration: none; font-weight: 600; font-size: 15px; padding: 12px 14px; border-radius: 10px; display: flex; align-items: center; gap: 10px; opacity: .9; }
+  nav a:hover { background: rgba(255,255,255,.15); opacity: 1; }
+  nav a.active { background: white; color: #4c1d95; }
+  .logout { color: white; text-decoration: none; font-weight: 600; border: 1px solid rgba(255,255,255,.6); padding: 10px 14px; border-radius: 10px; text-align: center; margin-top: 16px; }
+  .content { flex: 1; min-width: 0; }
+  main { padding: 28px; max-width: 1000px; width: 100%; }
+  .db-box { background: white; border-radius: 14px; box-shadow: 0 4px 14px rgba(0,0,0,.06); margin-top: 20px; overflow: auto; }
+  .db-head { padding: 18px 20px; border-bottom: 1px solid #e5e7eb; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .btn-small { background: linear-gradient(90deg,#7c3aed,#ec4899); color: white; border: none; border-radius: 8px; padding: 10px 16px; font-weight: 700; cursor: pointer; margin-top: 12px; }
+  .btn-danger { background: #dc2626; color: white; border: none; border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 12px; }
+  table { width: 100%; min-width: 900px; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid #f1f1f1; }
+  th { background: #f9fafb; color: #4c1d95; white-space: nowrap; }
+  @media (max-width: 750px) { .sidebar { width: 72px; padding: 16px 10px; } .brand-left h2, nav a span, .logout span { display: none; } nav a { justify-content: center; font-size: 20px; } .brand-left { justify-content: center; } }
+</style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand-left"><img src="logo.png" alt="Logo" /><h2>Nancy's System</h2></div>
+    <nav>
+      <a href="system.html">📊 <span>Dashboard</span></a>
+      <a href="system.html#drinks">🥤 <span>Drinks</span></a>
+      <a href="reports.html">📝 <span>Reports</span></a>
+      <a href="ai.html">🤖 <span>AI Predictor</span></a>
+      <a href="upload.html">📤 <span>Upload & Scan</span></a>
+      <a href="scanned-data.html" class="active">📑 <span>Scanned Data</span></a>
+      <a href="formulas.html">🧮 <span>Formulas</span></a>
+      <a href="settings.html">⚙️ <span>Settings</span></a>
+    </nav>
+    <a class="logout" href="index.html">⏻ <span>Logout</span></a>
+  </aside>
+  <div class="content">
+    <main>
+      <h1>Scanned Data</h1>
+      <p style="color:#6b7280;margin:8px 0 0;">Every scanned document result, newest first.</p>
+      <div class="db-box">
+        <div class="db-head">
+          <div><h2>AI Thorough Check</h2><span id="aiCount" style="color:#6b7280;font-size:13px;"></span></div>
+          <div>
+            <button class="btn-small" onclick="aiCheckAll()">AI check all</button>
+            <button class="btn-small" onclick="rectifyAll()">Rectify all at once</button>
+          </div>
+        </div>
+        <div style="padding:18px 20px;">
+          <div id="aiReport" style="font-size:13px;">Checks the whole path from upload: formula errors, unattended mistakes (never rectified) and added mistakes (appearing only after rectification).</div>
+        </div>
+      </div>
+      <div class="db-box">
+        <div class="db-head">
+          <div><h2>Scan results</h2><span id="scanCount" style="color:#6b7280;font-size:13px;"></span></div>
+          <div>
+            <label style="font-size:13px;font-weight:600;">View scan:
+              <select id="scanSelect" onchange="showScan()"></select>
+            </label>
+            <button class="btn-danger" onclick="deleteScan()">Delete this scan</button>
+          </div>
+        </div>
+        <div style="padding:18px 20px;">
+          <div id="scanMeta" style="font-size:13px;color:#6b7280;margin-bottom:10px;"></div>
+          <div style="overflow:auto;"><table>
+            <thead><tr><th>No</th><th>Item</th><th>Opening</th><th>Add</th><th>Total</th><th>Closing</th><th>Sales</th><th>Price</th><th>Amount</th></tr></thead>
+            <tbody id="dataRows"><tr><td colspan="9">No scans yet. Scan a sheet in Upload & Scan.</td></tr></tbody>
+          </table></div>
+        </div>
+      </div>
+    </main>
+  </div>
+<script>
+  function loadDocs() { try { return JSON.parse(localStorage.getItem('nancy_scanned_docs')) || []; } catch { return []; } }
+  function saveDocs(d) { localStorage.setItem('nancy_scanned_docs', JSON.stringify(d)); }
+  function isN(v) { return v !== '' && v !== undefined && v !== null && !isNaN(parseFloat(v)); }
+  function rowErrors(r) {
+    const errs = [];
+    const g = v => isN(v) ? parseFloat(v) : undefined;
+    const o = g(r.opening), a = g(r.add), t = g(r.total), c = g(r.closing), s = g(r.sales), p = g(r.price), m = g(r.amount);
+    if (o !== undefined && a !== undefined && t !== undefined && t !== o + a)
+      errs.push({ col: 'total', want: o + a, msg: 'Total ' + t + ' ≠ ' + o + ' + ' + a });
+    const tt = (o !== undefined && a !== undefined) ? o + a : t;
+    if (tt !== undefined && c !== undefined && s !== undefined && s !== tt - c)
+      errs.push({ col: 'sales', want: tt - c, msg: 'Sales ' + s + ' ≠ ' + tt + ' − ' + c });
+    const ss = (tt !== undefined && c !== undefined) ? tt - c : s;
+    if (ss !== undefined && p !== undefined && m !== undefined && m !== ss * p)
+      errs.push({ col: 'amount', want: ss * p, msg: 'Amount ' + m + ' ≠ ' + ss + ' × ' + p });
+    return errs;
+  }
+  function docSignature(rows) {
+    return (rows || []).map(r => r.id + ':' + (r.opening || '') + ',' + (r.add || '') + ',' + (r.total || '') + ',' + (r.closing || '') + ',' + (r.sales || '') + ',' + (r.price || '') + ',' + (r.amount || '')).join('|');
+  }
+  function aiCheckAll() {
+    const docs = loadDocs();
+    const box = document.getElementById('aiReport');
+    if (!docs.length) { box.innerHTML = 'No scanned documents yet.'; return { total: 0 }; }
+    let total = 0, unattended = 0, added = 0;
+    let html = '';
+    const seenClean = {};
+    docs.forEach((doc, i) => {
+      const rectified = /rectified/i.test(doc.date || '');
+      const errs = [];
+      (doc.rows || []).forEach(r => rowErrors(r).forEach(e => errs.push('No ' + r.id + ' ' + r.name + ' — ' + e.msg)));
+      total += errs.length;
+      const sig = docSignature(doc.rows);
+      let status;
+      if (!errs.length) { status = '<b style="color:#16a34a;">✅ Clean.</b>'; seenClean[sig] = true; }
+      else if (rectified) {
+        status = '<b style="color:#b91c1c;">❌ ' + errs.length + ' added/remaining error(s) in rectified version.</b>';
+        added += errs.length;
+      } else {
+        const laterFixed = docs.slice(i + 1).some(d => /rectified/i.test(d.date || ''));
+        if (laterFixed) { status = '<b style="color:#eab308;">⚠️ ' + errs.length + ' error(s) — rectified later, verify below.</b>'; }
+        else { status = '<b style="color:#b91c1c;">🔴 ' + errs.length + ' unattended error(s) — never rectified.</b>'; unattended += errs.length; }
+      }
+      html += '<div style="border:1px solid #e5e7eb;border-radius:10px;padding:10px;margin-top:10px;"><b>Scan ' + (i + 1) + ' — ' + doc.date + '</b> (' + (doc.rows || []).length + ' rows) ' +
+        '<button class="btn-danger" onclick="deleteScanAt(' + i + ')">Delete</button><br>' + status +
+        (errs.length ? '<div style="margin-top:6px;">' + errs.slice(0, 15).map((w, k) => (k + 1) + '. ' + w).join('<br>') + (errs.length > 15 ? '<br>...and ' + (errs.length - 15) + ' more' : '') + '</div>' : '') + '</div>';
+    });
+    document.getElementById('aiCount').textContent = total + ' error(s): ' + unattended + ' unattended, ' + added + ' added/remaining';
+    box.innerHTML = html;
+    return { total };
+  }
+  function rectifyAll() {
+    const docs = loadDocs();
+    if (!docs.length) { alert('No scanned documents.'); return; }
+    const check = aiCheckAll();
+    if (!check.total) { alert('No mistakes to rectify.'); return; }
+    if (!confirm('Rectify all ' + check.total + ' mistake(s) across all scanned documents at once?')) return;
+    docs.forEach(doc => {
+      (doc.rows || []).forEach(r => {
+        const g = v => isN(v) ? parseFloat(v) : undefined;
+        const o = g(r.opening), a = g(r.add);
+        if (o !== undefined && a !== undefined) r.total = o + a;
+        const t = g(r.total);
+        const c = g(r.closing);
+        if (t !== undefined && c !== undefined) r.sales = t - c;
+        const s = g(r.sales), p = g(r.price);
+        if (s !== undefined && p !== undefined) r.amount = s * p;
+        if (!/rectified/i.test(doc.date)) doc.date += ' (rectified)';
+      });
+    });
+    saveDocs(docs);
+    init();
+    aiCheckAll();
+    alert('All mistakes rectified at once.');
+  }
+  function init() {
+    const docs = loadDocs();
+    const sel = document.getElementById('scanSelect');
+    sel.innerHTML = docs.map((d, i) => '<option value="' + i + '">' + d.date + ' (' + d.rows.length + ' rows)</option>').join('');
+    document.getElementById('scanCount').textContent = docs.length + ' scan(s) saved';
+    if (docs.length) { sel.value = docs.length - 1; showScan(); }
+  }
+  function showScan() {
+    const docs = loadDocs();
+    const doc = docs[+document.getElementById('scanSelect').value];
+    if (!doc) return;
+    document.getElementById('scanMeta').textContent = 'Scanned ' + doc.date + ' — ' + doc.rows.length + ' rows' +
+      (doc.unparsed && doc.unparsed.length ? ' — ' + doc.unparsed.length + ' unmatched lines' : '');
+    document.getElementById('dataRows').innerHTML = doc.rows.map(r =>
+      '<tr><td>' + r.id + '</td><td>' + r.name + '</td><td>' + (r.opening || '') + '</td><td>' + (r.add || '') + '</td><td>' + (r.total || '') + '</td><td>' + (r.closing || '') + '</td><td>' + (r.sales || '') + '</td><td>' + (r.price || '') + '</td><td>' + (r.amount || '') + '</td></tr>').join('');
+  }
+  function deleteScanAt(i) {
+    const docs = loadDocs();
+    if (!docs[i]) return;
+    if (!confirm('Delete scan "' + docs[i].date + '"? This cannot be undone.')) return;
+    docs.splice(i, 1);
+    saveDocs(docs);
+    init();
+    aiCheckAll();
+  }
+  function deleteScan() {
+    const docs = loadDocs();
+    const idx = +document.getElementById('scanSelect').value;
+    if (!docs[idx]) { alert('No scan selected.'); return; }
+    if (!confirm('Delete scan "' + docs[idx].date + '"? This cannot be undone.')) return;
+    docs.splice(idx, 1);
+    saveDocs(docs);
+    init();
+    aiCheckAll();
+  }
+  init();
+</script>
+<script>
+  if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {})); }
+</script>
+</body>
+</html>

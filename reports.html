@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#7c3aed" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Nancy System" />
+<title>Nancy's System — Reports</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f3f4f6; min-height: 100vh; display: flex; }
+  .sidebar { width: 240px; min-height: 100vh; background: linear-gradient(180deg, #4c1d95, #7c3aed 60%, #ec4899); color: white; display: flex; flex-direction: column; padding: 20px 16px; position: sticky; top: 0; height: 100vh; }
+  .brand-left { display: flex; align-items: center; gap: 10px; padding: 4px 8px 16px; border-bottom: 1px solid rgba(255,255,255,.2); }
+  .brand-left img { width: 52px; height: 52px; border-radius: 12px; background: white; object-fit: contain; padding: 2px; }
+  .brand-left h2 { font-size: 17px; line-height: 1.2; }
+  nav { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; flex: 1; }
+  nav a { color: white; text-decoration: none; font-weight: 600; font-size: 15px; padding: 12px 14px; border-radius: 10px; display: flex; align-items: center; gap: 10px; opacity: .9; }
+  nav a:hover { background: rgba(255,255,255,.15); opacity: 1; }
+  nav a.active { background: white; color: #4c1d95; }
+  .logout { color: white; text-decoration: none; font-weight: 600; border: 1px solid rgba(255,255,255,.6); padding: 10px 14px; border-radius: 10px; text-align: center; margin-top: 16px; }
+  .content { flex: 1; min-width: 0; }
+  main { padding: 28px; max-width: 1000px; width: 100%; }
+  .db-box { background: white; border-radius: 14px; box-shadow: 0 4px 14px rgba(0,0,0,.06); margin-top: 20px; overflow: auto; }
+  .db-head { padding: 18px 20px; border-bottom: 1px solid #e5e7eb; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .btn-small { background: linear-gradient(90deg,#7c3aed,#ec4899); color: white; border: none; border-radius: 8px; padding: 10px 16px; font-weight: 700; cursor: pointer; }
+  .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .report-card { background: white; border-radius: 14px; box-shadow: 0 4px 14px rgba(0,0,0,.06); padding: 18px; }
+  .report-card h3 { color: #4c1d95; margin-bottom: 10px; font-size: 16px; }
+  .report-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
+  #repCount { color: #6b7280; font-size: 13px; }
+  .rep-table { font-size: 11px; }
+  .rep-table th, .rep-table td { padding: 5px 7px; }
+  @media print {
+    .sidebar, .no-print { display: none !important; }
+    body { background: white; display: block; }
+    .content { display: block; }
+    main { max-width: 100%; padding: 0; }
+    .db-box, .report-card { box-shadow: none; break-inside: avoid; }
+  }
+  @media (max-width: 900px) { .report-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 750px) { .sidebar { width: 72px; padding: 16px 10px; } .brand-left h2, nav a span, .logout span { display: none; } nav a { justify-content: center; font-size: 20px; } .brand-left { justify-content: center; } }
+</style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand-left"><img src="logo.png" alt="Logo" /><h2>Nancy's System</h2></div>
+    <nav>
+      <a href="system.html">📊 <span>Dashboard</span></a>
+      <a href="system.html#drinks">🥤 <span>Drinks</span></a>
+      <a href="reports.html" class="active">📝 <span>Reports</span></a>
+      <a href="ai.html">🤖 <span>AI Predictor</span></a>
+      <a href="upload.html">📤 <span>Upload & Scan</span></a>
+      <a href="scanned-data.html">📑 <span>Scanned Data</span></a>
+      <a href="formulas.html">🧮 <span>Formulas</span></a>
+      <a href="settings.html">⚙️ <span>Settings</span></a>
+    </nav>
+    <a class="logout" href="index.html">⏻ <span>Logout</span></a>
+  </aside>
+  <div class="content">
+    <main>
+      <h1>Reports Analysis</h1>
+      <p style="color:#6b7280;margin:8px 0 0;">Opening charts and closing graphs, day by day.</p>
+      <div class="db-box no-print">
+        <div class="db-head">
+          <div><h2>Weekly / Monthly PDF Report</h2><span id="genCount"></span></div>
+        </div>
+        <div style="padding:18px 20px;">
+          <div class="report-row">
+            <label style="font-size:13px;font-weight:600;">Type:
+              <select id="repType" onchange="togglePeriod()" style="width:auto;">
+                <option value="week">Weekly</option>
+                <option value="month">Monthly</option>
+              </select>
+            </label>
+            <label id="weekWrap" style="font-size:13px;font-weight:600;">Week starting: <input type="date" id="weekStart" style="width:auto;" /></label>
+            <label id="monthWrap" style="font-size:13px;font-weight:600;display:none;">Month: <input type="month" id="repMonth" style="width:auto;" /></label>
+            <button class="btn-small" onclick="genReport()">Generate report</button>
+            <button class="btn-small" onclick="exportPDF()">Export PDF</button>
+          </div>
+        </div>
+      </div>
+      <div class="db-box" id="printReport" style="display:none;">
+        <div class="db-head"><div><h2 id="repTitle"></h2><span id="repSummary"></span></div></div>
+        <div style="padding:18px 20px;">
+          <div class="report-card"><h3>Closing graph — total closing every day</h3><canvas id="rpCloseLine" height="200"></canvas></div>
+          <div class="report-grid">
+            <div class="report-card"><h3>Opening chart — top 20 items</h3><canvas id="rpOpenBar" height="240"></canvas></div>
+            <div class="report-card"><h3>Closing chart — top 20 items</h3><canvas id="rpCloseBar" height="240"></canvas></div>
+          </div>
+          <div class="report-card" style="margin-top:16px;"><h3>Every opening (all items × every day)</h3><div style="overflow:auto;"><table class="rep-table"><thead id="openHead"></thead><tbody id="openBody"></tbody></table></div></div>
+          <div class="report-card" style="margin-top:16px;"><h3>Every closing (all items × every day)</h3><div style="overflow:auto;"><table class="rep-table"><thead id="closeHead"></thead><tbody id="closeBody"></tbody></table></div></div>
+        </div>
+      </div>
+      <div class="db-box">
+        <div class="db-head">
+          <div><h2>Reports Analysis</h2><span id="repCount"></span></div>
+          <label style="font-size:13px;font-weight:600;">View day:
+            <select id="daySelect" onchange="updateCharts()"></select>
+          </label>
+        </div>
+        <div style="padding:18px 20px;">
+          <div class="report-grid">
+            <div class="report-card"><h3>Opening chart (by item)</h3><canvas id="chOpening" height="220"></canvas></div>
+            <div class="report-card"><h3>Closing graph (by item)</h3><canvas id="chClosing" height="220"></canvas></div>
+            <div class="report-card"><h3>Opening vs Closing per day</h3><canvas id="chDaily" height="220"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+<script src="drinks.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  let allDrinks = (typeof ALL_DRINKS !== 'undefined') ? ALL_DRINKS : [];
+  if (allDrinks.length === 0) {
+    fetch('drinks.json').then(r => r.json()).then(data => { allDrinks = data; init(); });
+  } else { init(); }
+  const LS_KEY = 'nancy_stock_days';
+  function loadDays() { try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch { return {}; } }
+  function loadDocs() { try { return JSON.parse(localStorage.getItem('nancy_scanned_docs')) || []; } catch { return []; } }
+  function scannedAsDays() {
+    const map = {};
+    loadDocs().forEach(doc => {
+      const dt = new Date(doc.date.replace(/\s*\(rectified\)\s*$/, ''));
+      if (isNaN(dt)) return;
+      const key = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+      const opening = {}, closing = {};
+      (doc.rows || []).forEach(r => {
+        if (r.opening !== '' && r.opening !== undefined) opening[r.id] = +r.opening;
+        if (r.closing !== '' && r.closing !== undefined) closing[r.id] = +r.closing;
+      });
+      if (!map[key]) map[key] = { opening: {}, closing: {} };
+      Object.assign(map[key].opening, opening);
+      Object.assign(map[key].closing, closing);
+    });
+    return map;
+  }
+  function reportSource() {
+    // Scanned data is primary; manually saved days fill gaps
+    return Object.assign(loadDays(), scannedAsDays());
+  }
+  let chO = null, chC = null, chD = null;
+  function init() {
+    const days = reportSource();
+    const keys = Object.keys(days).sort();
+    const sel = document.getElementById('daySelect');
+    sel.innerHTML = keys.map(k => '<option>' + k + '</option>').join('');
+    if (keys.length) sel.value = keys[keys.length - 1];
+    document.getElementById('repCount').textContent = keys.length + ' days saved (save days from Drinks page or scan sheets)';
+    updateCharts();
+  }
+  function updateCharts() {
+    if (typeof Chart === 'undefined') return;
+    const days = reportSource();
+    const keys = Object.keys(days).sort();
+    const selDay = document.getElementById('daySelect').value || keys[keys.length - 1];
+    const top = allDrinks.slice(0, 15);
+    const labels = top.map(d => d.name);
+    const openVals = top.map(d => (days[selDay] && days[selDay].opening[d.id]) || 0);
+    const closeVals = top.map(d => (days[selDay] && days[selDay].closing[d.id]) || 0);
+    const dailyOpen = keys.map(k => Object.values(days[k].opening || {}).reduce((a, b) => a + (+b || 0), 0));
+    const dailyClose = keys.map(k => Object.values(days[k].closing || {}).reduce((a, b) => a + (+b || 0), 0));
+    if (chO) chO.destroy(); if (chC) chC.destroy(); if (chD) chD.destroy();
+    chO = new Chart(document.getElementById('chOpening'), { type: 'bar',
+      data: { labels, datasets: [{ label: 'Opening ' + (selDay || ''), data: openVals, backgroundColor: '#7c3aed' }] },
+      options: { responsive: true } });
+    chC = new Chart(document.getElementById('chClosing'), { type: 'line',
+      data: { labels, datasets: [{ label: 'Closing ' + (selDay || ''), data: closeVals, borderColor: '#ec4899', fill: false, tension: 0.3 }] },
+      options: { responsive: true } });
+    chD = new Chart(document.getElementById('chDaily'), { type: 'bar',
+      data: { labels: keys, datasets: [
+        { label: 'Opening total', data: dailyOpen, backgroundColor: '#7c3aed' },
+        { label: 'Closing total', data: dailyClose, backgroundColor: '#ec4899' } ] },
+      options: { responsive: true } });
+  }
+  function togglePeriod() {
+    const t = document.getElementById('repType').value;
+    document.getElementById('weekWrap').style.display = t === 'week' ? '' : 'none';
+    document.getElementById('monthWrap').style.display = t === 'month' ? '' : 'none';
+  }
+  function periodDays() {
+    const t = document.getElementById('repType').value;
+    const days = [];
+    if (t === 'week') {
+      const s = document.getElementById('weekStart').value;
+      if (!s) { alert('Pick a week start date.'); return null; }
+      const d0 = new Date(s + 'T00:00:00');
+      for (let i = 0; i < 7; i++) { const d = new Date(d0); d.setDate(d0.getDate() + i); days.push(d.toISOString().slice(0, 10)); }
+    } else {
+      const m = document.getElementById('repMonth').value;
+      if (!m) { alert('Pick a month.'); return null; }
+      const [y, mo] = m.split('-').map(Number);
+      const n = new Date(y, mo, 0).getDate();
+      for (let i = 1; i <= n; i++) days.push(m + '-' + String(i).padStart(2, '0'));
+    }
+    return days;
+  }
+  let rp1 = null, rp2 = null, rp3 = null;
+  function genReport() {
+    const period = periodDays();
+    if (!period) return;
+    const days = reportSource();
+    const t = document.getElementById('repType').value;
+    const label = t === 'week' ? 'Weekly Report ' + period[0] + ' → ' + period[6] : 'Monthly Report ' + document.getElementById('repMonth').value;
+    const items = allDrinks.length ? allDrinks : [];
+    const sum = arr => arr.reduce((a, b) => a + (+b || 0), 0);
+    const dayClose = period.map(k => sum(Object.values((days[k] || {}).closing || {})));
+    const dayOpen = period.map(k => sum(Object.values((days[k] || {}).opening || {})));
+    const totOpen = {}, totClose = {};
+    items.forEach(d => {
+      totOpen[d.id] = sum(period.map(k => +(((days[k] || {}).opening || {})[d.id] || 0)));
+      totClose[d.id] = sum(period.map(k => +(((days[k] || {}).closing || {})[d.id] || 0)));
+    });
+    const ranked = items.map(d => ({ d, v: totClose[d.id] })).sort((a, b) => b.v - a.v).slice(0, 20);
+    document.getElementById('printReport').style.display = '';
+    document.getElementById('repTitle').textContent = "Nancy's System — " + label;
+    document.getElementById('repSummary').textContent = period.length + ' days | total opening ' + sum(dayOpen) + ' | total closing ' + sum(dayClose);
+    document.getElementById('genCount').textContent = label + ' ready';
+    const headHtml = '<tr><th>Item</th>' + period.map(k => '<th>' + k.slice(5) + '</th>').join('') + '<th>Total</th></tr>';
+    document.getElementById('openHead').innerHTML = headHtml;
+    document.getElementById('closeHead').innerHTML = headHtml;
+    document.getElementById('openBody').innerHTML = items.map(d =>
+      '<tr><td>' + d.name + '</td>' + period.map(k => '<td>' + (((days[k] || {}).opening || {})[d.id] ?? '') + '</td>').join('') + '<td><b>' + totOpen[d.id] + '</b></td></tr>').join('');
+    document.getElementById('closeBody').innerHTML = items.map(d =>
+      '<tr><td>' + d.name + '</td>' + period.map(k => '<td>' + (((days[k] || {}).closing || {})[d.id] ?? '') + '</td>').join('') + '<td><b>' + totClose[d.id] + '</b></td></tr>').join('');
+    if (typeof Chart === 'undefined') return;
+    if (rp1) rp1.destroy(); if (rp2) rp2.destroy(); if (rp3) rp3.destroy();
+    rp1 = new Chart(document.getElementById('rpCloseLine'), { type: 'line',
+      data: { labels: period, datasets: [{ label: 'Total closing each day', data: dayClose, borderColor: '#ec4899', fill: false, tension: 0.3 }] },
+      options: { responsive: true } });
+    rp2 = new Chart(document.getElementById('rpOpenBar'), { type: 'bar',
+      data: { labels: ranked.map(r => r.d.name), datasets: [{ label: 'Opening total (top 20)', data: ranked.map(r => totOpen[r.d.id]), backgroundColor: '#7c3aed' }] },
+      options: { responsive: true } });
+    rp3 = new Chart(document.getElementById('rpCloseBar'), { type: 'bar',
+      data: { labels: ranked.map(r => r.d.name), datasets: [{ label: 'Closing total (top 20)', data: ranked.map(r => totClose[r.d.id]), backgroundColor: '#ec4899' }] },
+      options: { responsive: true } });
+    document.getElementById('printReport').scrollIntoView();
+  }
+  function exportPDF() {
+    const rp = document.getElementById('printReport');
+    if (rp.style.display === 'none') { alert('Generate a report first.'); return; }
+    document.title = document.getElementById('repTitle').textContent;
+    window.print();
+  }
+</script>
+<script>
+  if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {})); }
+</script>
+</body>
+</html>

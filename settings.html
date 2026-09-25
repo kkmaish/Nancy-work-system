@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#7c3aed" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Nancy System" />
+<title>Nancy's System — Settings</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f3f4f6; min-height: 100vh; display: flex; }
+  .sidebar { width: 240px; min-height: 100vh; background: linear-gradient(180deg, #4c1d95, #7c3aed 60%, #ec4899); color: white; display: flex; flex-direction: column; padding: 20px 16px; position: sticky; top: 0; height: 100vh; }
+  .brand-left { display: flex; align-items: center; gap: 10px; padding: 4px 8px 16px; border-bottom: 1px solid rgba(255,255,255,.2); }
+  .brand-left img { width: 52px; height: 52px; border-radius: 12px; background: white; object-fit: contain; padding: 2px; }
+  .brand-left h2 { font-size: 17px; line-height: 1.2; }
+  nav { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; flex: 1; }
+  nav a { color: white; text-decoration: none; font-weight: 600; font-size: 15px; padding: 12px 14px; border-radius: 10px; display: flex; align-items: center; gap: 10px; opacity: .9; }
+  nav a:hover { background: rgba(255,255,255,.15); opacity: 1; }
+  nav a.active { background: white; color: #4c1d95; }
+  .logout { color: white; text-decoration: none; font-weight: 600; border: 1px solid rgba(255,255,255,.6); padding: 10px 14px; border-radius: 10px; text-align: center; margin-top: 16px; }
+  .content { flex: 1; min-width: 0; }
+  main { padding: 28px; max-width: 1000px; width: 100%; }
+  .card { background: white; padding: 24px; border-radius: 14px; box-shadow: 0 4px 14px rgba(0,0,0,.06); margin-top: 16px; }
+  .card h3 { color: #4c1d95; margin-bottom: 12px; }
+  label { font-size: 13px; font-weight: 600; color: #374151; display: block; margin: 12px 0 6px; }
+  input, select { width: 100%; padding: 10px 12px; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 14px; outline: none; }
+  input:focus { border-color: #7c3aed; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .btn-small { background: linear-gradient(90deg,#7c3aed,#ec4899); color: white; border: none; border-radius: 8px; padding: 10px 16px; font-weight: 700; cursor: pointer; margin-top: 12px; }
+  .btn-danger { background: #dc2626; color: white; border: none; border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #f1f1f1; }
+  th { background: #f9fafb; color: #4c1d95; }
+  .meter { height: 10px; background: #e5e7eb; border-radius: 6px; overflow: hidden; margin-top: 8px; }
+  .meter > div { height: 100%; width: 0%; transition: .3s; }
+  #strengthText { font-size: 13px; font-weight: 700; margin-top: 6px; }
+  .hint { font-size: 12px; color: #6b7280; margin-top: 6px; }
+  @media (max-width: 750px) { .sidebar { width: 72px; padding: 16px 10px; } .brand-left h2, nav a span, .logout span { display: none; } nav a { justify-content: center; font-size: 20px; } .brand-left { justify-content: center; } .row2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand-left"><img src="logo.png" alt="Logo" /><h2>Nancy's System</h2></div>
+    <nav>
+      <a href="system.html">📊 <span>Dashboard</span></a>
+      <a href="reports.html">📝 <span>Reports</span></a>
+      <a href="ai.html">🤖 <span>AI Predictor</span></a>
+      <a href="upload.html">📤 <span>Upload & Scan</span></a>
+      <a href="scanned-data.html">📑 <span>Scanned Data</span></a>
+      <a href="formulas.html">🧮 <span>Formulas</span></a>
+      <a href="settings.html" class="active">⚙️ <span>Settings</span></a>
+    </nav>
+    <a class="logout" href="index.html">⏻ <span>Logout</span></a>
+  </aside>
+  <div class="content">
+    <main>
+      <h1>Settings</h1>
+      <p style="color:#6b7280;margin:8px 0 0;">Staff admin, emails, passwords and strong-password tools.</p>
+      <div class="card" style="display:flex;gap:10px;flex-wrap:wrap;">
+        <a href="#email-settings" style="font-weight:700;color:#4c1d95;text-decoration:none;">📧 Email Settings</a>
+        <span style="color:#9ca3af;">|</span>
+        <a href="#password-settings" style="font-weight:700;color:#4c1d95;text-decoration:none;">🔑 Password Settings</a>
+      </div>
+
+      <div id="email-settings">
+      <div class="card">
+        <h3>Email Settings — Admin account</h3>
+        <div class="row2">
+          <div><label>Admin email</label><input id="adminEmail" type="email" placeholder="admin@nancysystem.com" /></div>
+          <div><label>New admin password</label><input id="adminPass" type="password" placeholder="••••••••" oninput="checkStrength('adminPass','adminMeter','adminText')" /></div>
+        </div>
+        <div class="meter"><div id="adminMeter"></div></div>
+        <div id="adminText"></div>
+        <button class="btn-small" onclick="saveAdmin()">Save admin</button>
+      </div>
+
+      <div class="card">
+        <h3>Add staff</h3>
+        <div class="row2">
+          <div><label>Staff name</label><input id="staffName" type="text" placeholder="e.g. Mary" /></div>
+          <div><label>Staff email</label><input id="staffEmail" type="email" placeholder="staff@example.com" /></div>
+        </div>
+        <label>Staff password</label>
+        <input id="staffPass" type="password" placeholder="••••••••" oninput="checkStrength('staffPass','staffMeter','staffText')" />
+        <div class="meter"><div id="staffMeter"></div></div>
+        <div id="staffText"></div>
+        <div class="hint">Strong password needs 8+ chars, upper + lower case, number and symbol.</div>
+        <button class="btn-small" onclick="generatePass('staffPass')">Generate strong password</button>
+        <button class="btn-small" onclick="addStaff()">Add staff</button>
+      </div>
+
+      <div class="card">
+        <h3>Staff list</h3>
+        <table><thead><tr><th>Name</th><th>Email</th><th>Action</th></tr></thead><tbody id="staffRows"></tbody></table>
+      </div>
+
+      <div class="card">
+        <h3>Email Settings — System emails</h3>
+        <div class="row2">
+          <div><label>System sender email</label><input id="sysEmail" type="email" placeholder="noreply@nancysystem.com" /></div>
+          <div><label>Alerts recipient email</label><input id="alertEmail" type="email" placeholder="manager@example.com" /></div>
+        </div>
+        <div class="hint">Used for password-reset messages and low-stock alerts.</div>
+        <button class="btn-small" onclick="saveEmailSettings()">Save email settings</button>
+      </div>
+      </div>
+
+      <div id="password-settings">
+      <div class="card">
+        <h3>Password Settings — Reset staff password</h3>
+        <label>Staff email</label>
+        <select id="resetStaffEmail"></select>
+        <label>New password</label>
+        <input id="resetStaffPass" type="password" placeholder="••••••••" />
+        <button class="btn-small" onclick="generatePass('resetStaffPass')">Generate strong password</button>
+        <button class="btn-small" onclick="resetStaffPassword()">Reset password</button>
+      </div>
+
+      <div class="card">
+        <h3>Password Settings — Strong password generator</h3>
+        <label>Generated password</label>
+        <input id="genOut" type="text" readonly />
+        <button class="btn-small" onclick="generatePass('genOut')">Generate</button>
+        <button class="btn-small" onclick="copyGen()">Copy</button>
+      </div>
+      </div>
+    </main>
+  </div>
+<script>
+  const STAFF_KEY = 'nancy_staff', ADMIN_KEY = 'nancy_admin', AUTH_KEY = 'nancy_auth', EMAIL_KEY = 'nancy_email_settings';
+  function getAuth() { try { return JSON.parse(localStorage.getItem(AUTH_KEY)) || {}; } catch { return {}; } }
+  function setAuth(a) { localStorage.setItem(AUTH_KEY, JSON.stringify(a)); }
+  function loadStaff() { try { return JSON.parse(localStorage.getItem(STAFF_KEY)) || []; } catch { return []; } }
+  function saveStaff(s) { localStorage.setItem(STAFF_KEY, JSON.stringify(s)); }
+  function scorePassword(p) {
+    let s = 0;
+    if (p.length >= 8) s++;
+    if (p.length >= 12) s++;
+    if (/[A-Z]/.test(p) && /[a-z]/.test(p)) s++;
+    if (/\d/.test(p)) s++;
+    if (/[^A-Za-z0-9]/.test(p)) s++;
+    return Math.min(s, 5);
+  }
+  function checkStrength(inputId, meterId, textId) {
+    const p = document.getElementById(inputId).value;
+    const s = scorePassword(p);
+    const colors = ['#e5e7eb', '#ef4444', '#f59e0b', '#eab308', '#22c55e', '#16a34a'];
+    const labels = ['Too short', 'Weak', 'Fair', 'Good', 'Strong', 'Very strong'];
+    document.getElementById(meterId).style.width = (s * 20) + '%';
+    document.getElementById(meterId).style.background = colors[s];
+    const t = document.getElementById(textId);
+    t.textContent = p ? labels[s] : '';
+    t.style.color = colors[s];
+    return s;
+  }
+  function generatePass(targetId) {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*';
+    let p = '';
+    for (let i = 0; i < 12; i++) p += chars[Math.floor(Math.random() * chars.length)];
+    document.getElementById(targetId).value = p;
+    if (targetId === 'staffPass') checkStrength('staffPass', 'staffMeter', 'staffText');
+    if (targetId === 'adminPass') checkStrength('adminPass', 'adminMeter', 'adminText');
+  }
+  function copyGen() {
+    const el = document.getElementById('genOut');
+    el.select(); document.execCommand('copy');
+    alert('Copied: ' + el.value);
+  }
+  function validEmail(e) { return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e); }
+  function saveAdmin() {
+    const email = document.getElementById('adminEmail').value.trim();
+    const pass = document.getElementById('adminPass').value;
+    if (!validEmail(email)) { alert('Enter a valid admin email.'); return; }
+    if (scorePassword(pass) < 3) { alert('Admin password too weak. Use 8+ chars with upper, lower, number and symbol.'); return; }
+    localStorage.setItem(ADMIN_KEY, JSON.stringify({ email }));
+    const auth = getAuth(); auth[email.toLowerCase()] = pass; setAuth(auth);
+    sessionStorage.setItem('nancy_user', email);
+    alert('Admin saved: ' + email);
+  }
+  function addStaff() {
+    const name = document.getElementById('staffName').value.trim();
+    const email = document.getElementById('staffEmail').value.trim();
+    const pass = document.getElementById('staffPass').value;
+    if (!name) { alert('Enter staff name.'); return; }
+    if (!validEmail(email)) { alert('Enter a valid staff email.'); return; }
+    if (scorePassword(pass) < 3) { alert('Staff password too weak. Generate a strong one.'); return; }
+    const staff = loadStaff();
+    if (staff.some(s => s.email.toLowerCase() === email.toLowerCase())) { alert('Staff email already exists.'); return; }
+    staff.push({ name, email });
+    saveStaff(staff);
+    const auth = getAuth(); auth[email.toLowerCase()] = pass; setAuth(auth);
+    document.getElementById('staffName').value = '';
+    document.getElementById('staffEmail').value = '';
+    document.getElementById('staffPass').value = '';
+    renderStaff();
+  }
+  function removeStaff(email) {
+    saveStaff(loadStaff().filter(s => s.email !== email));
+    const auth = getAuth(); delete auth[email.toLowerCase()]; setAuth(auth);
+    renderStaff();
+  }
+  function saveEmailSettings() {
+    const sys = document.getElementById('sysEmail').value.trim();
+    const al = document.getElementById('alertEmail').value.trim();
+    if (sys && !validEmail(sys)) { alert('Enter a valid sender email.'); return; }
+    if (al && !validEmail(al)) { alert('Enter a valid alerts email.'); return; }
+    localStorage.setItem(EMAIL_KEY, JSON.stringify({ sender: sys, alerts: al }));
+    alert('Email settings saved.');
+  }
+  function resetStaffPassword() {
+    const email = document.getElementById('resetStaffEmail').value;
+    const np = document.getElementById('resetStaffPass').value;
+    if (!email) { alert('No staff to reset.'); return; }
+    if (scorePassword(np) < 3) { alert('New password too weak. Generate a strong one.'); return; }
+    const auth = getAuth(); auth[email.toLowerCase()] = np; setAuth(auth);
+    document.getElementById('resetStaffPass').value = '';
+    alert('Password reset for ' + email + '.');
+  }
+  function renderStaff() {
+    const staff = loadStaff();
+    document.getElementById('staffRows').innerHTML = staff.length
+      ? staff.map(s => '<tr><td>' + s.name + '</td><td>' + s.email + '</td><td><button class="btn-danger" onclick="removeStaff(\'' + s.email + '\')">Remove</button></td></tr>').join('')
+      : '<tr><td colspan="3" style="color:#6b7280;">No staff yet.</td></tr>';
+    document.getElementById('resetStaffEmail').innerHTML = staff.map(s => '<option>' + s.email + '</option>').join('');
+  }
+  (function init() {
+    try {
+      const admin = JSON.parse(localStorage.getItem(ADMIN_KEY));
+      if (admin && admin.email) document.getElementById('adminEmail').value = admin.email;
+      const em = JSON.parse(localStorage.getItem(EMAIL_KEY));
+      if (em) {
+        if (em.sender) document.getElementById('sysEmail').value = em.sender;
+        if (em.alerts) document.getElementById('alertEmail').value = em.alerts;
+      }
+    } catch {}
+    renderStaff();
+  })();
+</script>
+<script>
+  if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {})); }
+</script>
+</body>
+</html>

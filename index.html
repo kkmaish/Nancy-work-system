@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#065f46" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Nancy System" />
+<title>Nancy's System — Login</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #082f49; }
+  .video-bg { position: fixed; inset: 0; z-index: 0; }
+  .video-bg iframe { position: absolute; top: 50%; left: 50%; width: 120vw; height: 120vh; transform: translate(-50%, -50%) scale(1.15); border: 0; pointer-events: none; }
+  .video-shade { position: fixed; inset: 0; z-index: 1; background: linear-gradient(135deg, rgba(4,47,55,.72) 0%, rgba(6,95,70,.55) 45%, rgba(0,0,0,.68) 100%); }
+  .login-card {
+    position: relative; z-index: 2;
+    width: 400px; max-width: 92%;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(14px);
+    border-radius: 22px;
+    padding: 40px 36px;
+    box-shadow: 0 30px 80px rgba(0,0,0,.5);
+    border-top: 6px solid #d97706;
+    text-align: center;
+  }
+  .login-card img.logo { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; background: #fff; padding: 4px; border: 3px solid #d97706; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+  .login-card h1 { font-family: Georgia, serif; font-size: 26px; color: #065f46; margin: 12px 0 2px; }
+  .login-card h1 span { color: #b45309; }
+  .sub { color: #6b7280; font-size: 14px; margin-bottom: 20px; }
+  .error { display: none; background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 12px; text-align: left; }
+  label { font-size: 13px; font-weight: 600; color: #374151; display: block; margin: 12px 0 6px; text-align: left; }
+  input[type="email"], input[type="password"], input[type="text"] {
+    width: 100%; padding: 12px 14px; border: 1.5px solid #e5e7eb; border-radius: 10px;
+    font-size: 15px; outline: none; transition: .2s; background: #fff;
+  }
+  input:focus { border-color: #059669; box-shadow: 0 0 0 3px rgba(5,150,105,.15); }
+  .pass-wrap { position: relative; }
+  .toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 13px; color: #065f46; font-weight: 700; }
+  .row { display: flex; justify-content: space-between; align-items: center; margin: 14px 0 18px; font-size: 13px; }
+  .row a { color: #065f46; text-decoration: none; font-weight: 600; }
+  .row a:hover { text-decoration: underline; }
+  .btn { width: 100%; padding: 13px; border: none; border-radius: 10px; background: linear-gradient(120deg, #047857, #d97706); color: white; font-size: 16px; font-weight: 700; cursor: pointer; transition: .2s; box-shadow: 0 6px 18px rgba(4,120,87,.4); }
+  .btn:hover { transform: translateY(-1px); }
+  .signup { text-align: center; font-size: 14px; margin-top: 16px; color: #6b7280; }
+  .signup a { color: #065f46; font-weight: 700; text-decoration: none; }
+  .login-card, .video-shade { transition: opacity 1.5s, transform 1.5s; }
+  body.idle-login .login-card { opacity: .04; transform: scale(.97); pointer-events: none; }
+  body.idle-login .video-shade { opacity: .15; }
+  @media (max-width: 480px) { .login-card { padding: 30px 24px; } }
+  @media (prefers-reduced-motion: reduce) { .video-bg { display: none; } }
+</style>
+</head>
+<body>
+  <div class="video-bg" aria-hidden="true">
+    <iframe src="https://www.youtube.com/embed/G52dUQLxPzg?autoplay=1&mute=1&controls=0&rel=0&loop=1&playlist=G52dUQLxPzg&modestbranding=1&playsinline=1" title="Underwater film" allow="autoplay; fullscreen"></iframe>
+  </div>
+  <div class="video-shade" aria-hidden="true"></div>
+  <div class="login-card">
+    <img class="logo" src="logo.png" alt="Nancy's System Logo" onerror="this.style.display='none'" />
+    <h1>NANCY'S <span>SYSTEM</span></h1>
+    <p class="sub">Secure sign-in to your stock control</p>
+    <div id="error" class="error"></div>
+    <form id="loginForm" novalidate>
+      <label for="email">Email Address</label>
+      <input type="email" id="email" placeholder="nancy@example.com" required />
+      <label for="password">Password</label>
+      <div class="pass-wrap">
+        <input type="password" id="password" placeholder="••••••••" required />
+        <button type="button" class="toggle" id="togglePass">Show</button>
+      </div>
+      <div class="row">
+        <label style="margin:0; font-weight:400; display:flex; gap:6px; align-items:center;">
+          <input type="checkbox" id="remember" /> Remember me
+        </label>
+        <a href="#" id="forgotLink">Forgot password?</a>
+      </div>
+      <button class="btn" type="submit">Login</button>
+    </form>
+    <form id="resetForm" novalidate style="display:none;">
+      <label for="resetEmail">Email Address</label>
+      <input type="email" id="resetEmail" placeholder="nancy@example.com" required />
+      <label for="newPass">New Password</label>
+      <div class="pass-wrap">
+        <input type="password" id="newPass" placeholder="Min 6 characters" required />
+        <button type="button" class="toggle" id="toggleNew">Show</button>
+      </div>
+      <button class="btn" type="submit" style="margin-top:14px;">Reset password</button>
+      <p class="signup"><a href="#" id="backLogin">← Back to login</a></p>
+    </form>
+    <p class="signup"><a href="nancy.html">Go to System →</a></p>
+  </div>
+<script>
+  const form = document.getElementById('loginForm');
+  const resetForm = document.getElementById('resetForm');
+  const errorBox = document.getElementById('error');
+  const toggle = document.getElementById('togglePass');
+  const pass = document.getElementById('password');
+  const AUTH_KEY = 'nancy_auth';
+
+  toggle.addEventListener('click', () => {
+    const show = pass.type === 'password';
+    pass.type = show ? 'text' : 'password';
+    toggle.textContent = show ? 'Hide' : 'Show';
+  });
+
+  document.getElementById('toggleNew').addEventListener('click', () => {
+    const np = document.getElementById('newPass');
+    const show = np.type === 'password';
+    np.type = show ? 'text' : 'password';
+    document.getElementById('toggleNew').textContent = show ? 'Hide' : 'Show';
+  });
+
+  document.getElementById('forgotLink').addEventListener('click', e => {
+    e.preventDefault();
+    errorBox.style.display = 'none';
+    form.style.display = 'none';
+    resetForm.style.display = 'block';
+  });
+  document.getElementById('backLogin').addEventListener('click', e => {
+    e.preventDefault();
+    errorBox.style.display = 'none';
+    resetForm.style.display = 'none';
+    form.style.display = 'block';
+  });
+
+  function getAuth() { try { return JSON.parse(localStorage.getItem(AUTH_KEY)) || {}; } catch { return {}; } }
+  function setAuth(a) { localStorage.setItem(AUTH_KEY, JSON.stringify(a)); }
+
+  resetForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const email = document.getElementById('resetEmail').value.trim().toLowerCase();
+    const np = document.getElementById('newPass').value;
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { showError('Enter a valid email address.'); return; }
+    if (np.length < 6) { showError('New password must be at least 6 characters.'); return; }
+    const auth = getAuth();
+    const staff = (() => { try { return JSON.parse(localStorage.getItem('nancy_staff')) || []; } catch { return []; } })();
+    const known = auth[email] !== undefined || staff.some(s => s.email.toLowerCase() === email);
+    if (!known) { showError('Email not found. Contact admin.'); return; }
+    auth[email] = np;
+    setAuth(auth);
+    errorBox.style.display = 'none';
+    alert('Password reset for ' + email + '. Please login.');
+    resetForm.style.display = 'none';
+    form.style.display = 'block';
+  });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value.trim();
+    const password = pass.value;
+    if (!email || !password) {
+      showError('Please fill in email and password.');
+      return;
+    }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      showError('Please enter a valid email address.');
+      return;
+    }
+    if (password.length < 6) {
+      showError('Password must be at least 6 characters.');
+      return;
+    }
+    errorBox.style.display = 'none';
+    const low = email.toLowerCase();
+    const auth = getAuth();
+    if (auth[low] !== undefined && auth[low] !== password) {
+      showError('Wrong password. Use Forgot password to reset.');
+      return;
+    }
+    if (document.getElementById('remember').checked) {
+      localStorage.setItem('nancy_user', email);
+    } else {
+      sessionStorage.setItem('nancy_user', email);
+    }
+    window.location.href = "nancy.html";
+  });
+
+  function showError(msg) {
+    errorBox.textContent = msg;
+    errorBox.style.display = 'block';
+  }
+  let idleTimer = null;
+  function wakeLogin() {
+    document.body.classList.remove('idle-login');
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => document.body.classList.add('idle-login'), 10000);
+  }
+  ['mousemove', 'mousedown', 'keydown', 'touchstart', 'click'].forEach(e => window.addEventListener(e, wakeLogin, { passive: true }));
+  wakeLogin();
+</script>
+<script>
+  if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {})); }
+</script>
+</body>
+</html>
