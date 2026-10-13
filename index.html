@@ -47,6 +47,12 @@
   .btn:hover { transform: translateY(-1px); }
   .signup { text-align: center; font-size: 14px; margin-top: 16px; color: #6b7280; }
   .signup a { color: #065f46; font-weight: 700; text-decoration: none; }
+  #netBadge { position: fixed; top: 12px; right: 12px; z-index: 5; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 20px; background: #dcfce7; color: #166534; }
+  #netBadge.off { background: #fee2e2; color: #991b1b; }
+  .capsWarn { display: none; font-size: 12px; color: #b45309; font-weight: 600; margin-top: 4px; text-align: left; }
+  .meter { height: 8px; background: #e5e7eb; border-radius: 6px; overflow: hidden; margin-top: 8px; }
+  .meter > div { height: 100%; width: 0%; transition: .3s; }
+  #resetText { font-size: 12px; font-weight: 700; margin-top: 4px; text-align: left; }
   .login-card, .video-shade { transition: opacity 1.5s, transform 1.5s; }
   body.idle-login .login-card { opacity: .04; transform: scale(.97); pointer-events: none; }
   body.idle-login .video-shade { opacity: .15; }
@@ -59,6 +65,7 @@
     <iframe src="https://www.youtube.com/embed/G52dUQLxPzg?autoplay=1&mute=1&controls=0&rel=0&loop=1&playlist=G52dUQLxPzg&modestbranding=1&playsinline=1" title="Underwater film" allow="autoplay; fullscreen"></iframe>
   </div>
   <div class="video-shade" aria-hidden="true"></div>
+  <div id="netBadge">● online</div>
   <div class="login-card">
     <img class="logo" src="logo.png" alt="Nancy's System Logo" onerror="this.style.display='none'" />
     <h1>NANCY'S <span>SYSTEM</span></h1>
@@ -71,6 +78,7 @@
       <div class="pass-wrap">
         <input type="password" id="password" placeholder="••••••••" required />
         <button type="button" class="toggle" id="togglePass">Show</button>
+        <div class="capsWarn" id="capsLogin">Caps Lock is ON</div>
       </div>
       <div class="row">
         <label style="margin:0; font-weight:400; display:flex; gap:6px; align-items:center;">
@@ -78,6 +86,8 @@
         </label>
         <a href="#" id="forgotLink">Forgot password?</a>
       </div>
+      <label for="loginBranch">Branch</label>
+      <select id="loginBranch" style="width:100%;padding:12px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:15px;"></select>
       <button class="btn" type="submit">Login</button>
     </form>
     <p class="signup"><a href="#" id="pinLink">Staff PIN login →</a></p>
@@ -93,15 +103,42 @@
     <form id="resetForm" novalidate style="display:none;">
       <label for="resetEmail">Email Address</label>
       <input type="email" id="resetEmail" placeholder="nancy@example.com" required />
+      <label for="resetPin">Your 4-digit PIN (identity check)</label>
+      <input type="password" id="resetPin" inputmode="numeric" maxlength="4" placeholder="••••" required />
       <label for="newPass">New Password</label>
       <div class="pass-wrap">
-        <input type="password" id="newPass" placeholder="Min 6 characters" required />
+        <input type="password" id="newPass" placeholder="Min 8 characters, mixed" required />
         <button type="button" class="toggle" id="toggleNew">Show</button>
+        <div class="capsWarn" id="capsReset">Caps Lock is ON</div>
       </div>
+      <div class="meter"><div id="resetMeter"></div></div>
+      <div id="resetText"></div>
       <button class="btn" type="submit" style="margin-top:14px;">Reset password</button>
       <p class="signup"><a href="#" id="backLogin">← Back to login</a></p>
     </form>
-    <p class="signup"><a href="nancy.html">Go to System →</a></p>
+    <p class="signup">New here? <a href="#" id="signupLink">Sign up →</a></p>
+    <form id="signupForm" novalidate style="display:none;">
+      <label for="suName">Full name</label>
+      <input type="text" id="suName" placeholder="Your name" required />
+      <label for="suEmail">Email Address</label>
+      <input type="email" id="suEmail" placeholder="you@example.com" required />
+      <label for="suPass">Password (strong)</label>
+      <input type="password" id="suPass" placeholder="Min 8 characters, mixed" required />
+      <label for="suPin">Choose 4-digit PIN</label>
+      <input type="password" id="suPin" inputmode="numeric" maxlength="4" placeholder="••••" required />
+      <button class="btn" type="submit" style="margin-top:14px;">Create cashier account</button>
+      <p class="signup"><a href="#" id="backLogin2">← Back to login</a></p>
+    </form>
+    <form id="setupForm" novalidate style="display:none;">
+      <p class="sub">First run — create the admin account.</p>
+      <label for="setupEmail">Admin email</label>
+      <input type="email" id="setupEmail" placeholder="admin@nancysystem.com" required />
+      <label for="setupPass">Admin password (strong)</label>
+      <input type="password" id="setupPass" placeholder="Min 8 characters, mixed" required />
+      <label for="setupPin">Admin 4-digit PIN</label>
+      <input type="password" id="setupPin" inputmode="numeric" maxlength="4" placeholder="••••" required />
+      <button class="btn" type="submit" style="margin-top:14px;">Create admin</button>
+    </form></p>
   </div>
 <script>
   const form = document.getElementById('loginForm');
@@ -165,24 +202,85 @@
     errorBox.style.display = 'none';
     sessionStorage.setItem('nancy_user', s.email);
     sessionStorage.setItem('nancy_role', s.role || 'cashier');
+    saveBranch();
     window.location.href = "nancy.html";
   });
 
   function getAuth() { try { return JSON.parse(localStorage.getItem(AUTH_KEY)) || {}; } catch { return {}; } }
+  function scorePw(p) {
+    let s = 0;
+    if (p.length >= 8) s++;
+    if (p.length >= 12) s++;
+    if (/[A-Z]/.test(p) && /[a-z]/.test(p)) s++;
+    if (/\d/.test(p)) s++;
+    if (/[^A-Za-z0-9]/.test(p)) s++;
+    return Math.min(s, 5);
+  }
+  function validEmail(e) { return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e); }
+  function hasAccounts() {
+    try {
+      const a = JSON.parse(localStorage.getItem('nancy_admin'));
+      const s = JSON.parse(localStorage.getItem('nancy_staff')) || [];
+      const au = JSON.parse(localStorage.getItem(AUTH_KEY)) || {};
+      return !!((a && a.email) || s.length || Object.keys(au).length);
+    } catch { return true; }
+  }
+  function fillBranches() {
+    let list = [{ id: 'main', name: 'Main Branch' }];
+    try { list = JSON.parse(localStorage.getItem('nancy_branches')) || list; } catch {}
+    document.getElementById('loginBranch').innerHTML = list.map(b => '<option value="' + b.id + '">' + b.name + '</option>').join('');
+  }
+  function saveBranch() {
+    try { localStorage.setItem('nancy_branch', document.getElementById('loginBranch').value || 'main'); } catch {}
+  }
+  function failCount() {
+    let f = { n: 0, until: 0 };
+    try { f = JSON.parse(localStorage.getItem('nancy_fail')) || f; } catch {}
+    return f;
+  }
+  function lockedLeft() {
+    const f = failCount();
+    return f.until > Date.now() ? Math.ceil((f.until - Date.now()) / 1000) : 0;
+  }
+  function bumpFail() {
+    const f = failCount();
+    f.n++;
+    if (f.n >= 5) { f.until = Date.now() + 60000; f.n = 0; }
+    try { localStorage.setItem('nancy_fail', JSON.stringify(f)); } catch {}
+  }
+  function clearFail() { try { localStorage.removeItem('nancy_fail'); } catch {} }
   function setAuth(a) { localStorage.setItem(AUTH_KEY, JSON.stringify(a)); }
 
+  document.getElementById('newPass').addEventListener('input', () => {
+    const s = scorePw(document.getElementById('newPass').value);
+    const colors = ['#e5e7eb', '#ef4444', '#f59e0b', '#eab308', '#22c55e', '#16a34a'];
+    const labels = ['Too short', 'Weak', 'Fair', 'Good', 'Strong', 'Very strong'];
+    document.getElementById('resetMeter').style.width = (s * 20) + '%';
+    document.getElementById('resetMeter').style.background = colors[s];
+    const t = document.getElementById('resetText');
+    t.textContent = labels[s];
+    t.style.color = colors[s];
+  });
   resetForm.addEventListener('submit', e => {
     e.preventDefault();
     const email = document.getElementById('resetEmail').value.trim().toLowerCase();
+    const pin = document.getElementById('resetPin').value.trim();
     const np = document.getElementById('newPass').value;
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { showError('Enter a valid email address.'); return; }
-    if (np.length < 6) { showError('New password must be at least 6 characters.'); return; }
+    if (!validEmail(email)) { showError('Enter a valid email address.'); return; }
     const auth = getAuth();
-    const staff = (() => { try { return JSON.parse(localStorage.getItem('nancy_staff')) || []; } catch { return []; } })();
-    const known = auth[email] !== undefined || staff.some(s => s.email.toLowerCase() === email);
+    let staff = [];
+    try { staff = JSON.parse(localStorage.getItem('nancy_staff')) || []; } catch {}
+    let admin = null;
+    try { admin = JSON.parse(localStorage.getItem('nancy_admin')); } catch {}
+    const st = staff.find(s => s.email.toLowerCase() === email);
+    const known = auth[email] !== undefined || st || (admin && admin.email.toLowerCase() === email);
     if (!known) { showError('Email not found. Contact admin.'); return; }
+    const needPin = st ? st.pin : (admin && admin.pin);
+    if (needPin && pin !== needPin) { bumpFail(); showError('Wrong PIN — identity not confirmed.'); return; }
+    if (scorePw(np) < 3) { showError('New password too weak: 8+ chars with upper, lower, number and symbol.'); return; }
     auth[email] = np;
     setAuth(auth);
+    clearFail();
     errorBox.style.display = 'none';
     alert('Password reset for ' + email + '. Please login.');
     resetForm.style.display = 'none';
@@ -201,6 +299,8 @@
       showError('Please enter a valid email address.');
       return;
     }
+    const wait = lockedLeft();
+    if (wait > 0) { showError('Too many wrong tries. Wait ' + wait + 's.'); return; }
     if (password.length < 6) {
       showError('Password must be at least 6 characters.');
       return;
@@ -209,9 +309,12 @@
     const low = email.toLowerCase();
     const auth = getAuth();
     if (auth[low] !== undefined && auth[low] !== password) {
+      bumpFail();
       showError('Wrong password. Use Forgot password to reset.');
       return;
     }
+    clearFail();
+    saveBranch();
     if (document.getElementById('remember').checked) {
       localStorage.setItem('nancy_user', email);
     } else {
@@ -225,6 +328,64 @@
     window.location.href = "nancy.html";
   });
 
+  function hideAll() {
+    form.style.display = 'none';
+    resetForm.style.display = 'none';
+    pinForm.style.display = 'none';
+    document.getElementById('signupForm').style.display = 'none';
+    document.getElementById('setupForm').style.display = 'none';
+    errorBox.style.display = 'none';
+  }
+  document.getElementById('signupLink').addEventListener('click', e => {
+    e.preventDefault();
+    hideAll();
+    document.getElementById('signupForm').style.display = 'block';
+  });
+  document.getElementById('backLogin2').addEventListener('click', e => {
+    e.preventDefault();
+    hideAll();
+    form.style.display = 'block';
+  });
+  document.getElementById('signupForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const name = document.getElementById('suName').value.trim();
+    const email = document.getElementById('suEmail').value.trim().toLowerCase();
+    const pw = document.getElementById('suPass').value;
+    const pin = document.getElementById('suPin').value.trim();
+    if (!name) { showError('Enter your name.'); return; }
+    if (!validEmail(email)) { showError('Enter a valid email.'); return; }
+    if (scorePw(pw) < 3) { showError('Password too weak: 8+ chars with upper, lower, number and symbol.'); return; }
+    if (!/^[0-9]{4}$/.test(pin)) { showError('PIN must be exactly 4 digits.'); return; }
+    let staff = [];
+    try { staff = JSON.parse(localStorage.getItem('nancy_staff')) || []; } catch {}
+    const auth = getAuth();
+    if (staff.some(s => s.email.toLowerCase() === email) || auth[email] !== undefined) { showError('Account already exists. Please login.'); return; }
+    staff.push({ name, email, role: 'cashier', pin });
+    try { localStorage.setItem('nancy_staff', JSON.stringify(staff)); } catch {}
+    auth[email] = pw;
+    setAuth(auth);
+    errorBox.style.display = 'none';
+    alert('Account created for ' + name + ' (cashier). Please login.');
+    hideAll();
+    form.style.display = 'block';
+  });
+  document.getElementById('setupForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const email = document.getElementById('setupEmail').value.trim().toLowerCase();
+    const pw = document.getElementById('setupPass').value;
+    const pin = document.getElementById('setupPin').value.trim();
+    if (!validEmail(email)) { showError('Enter a valid admin email.'); return; }
+    if (scorePw(pw) < 3) { showError('Password too weak: 8+ chars with upper, lower, number and symbol.'); return; }
+    if (!/^[0-9]{4}$/.test(pin)) { showError('PIN must be exactly 4 digits.'); return; }
+    try { localStorage.setItem('nancy_admin', JSON.stringify({ email, pin })); } catch {}
+    const auth = getAuth();
+    auth[email] = pw;
+    setAuth(auth);
+    sessionStorage.setItem('nancy_user', email);
+    sessionStorage.setItem('nancy_role', 'admin');
+    saveBranch();
+    window.location.href = 'nancy.html';
+  });
   function showError(msg) {
     errorBox.textContent = msg;
     errorBox.style.display = 'block';
@@ -235,7 +396,46 @@
     clearTimeout(idleTimer);
     idleTimer = setTimeout(() => document.body.classList.add('idle-login'), 10000);
   }
-  ['mousemove', 'mousedown', 'keydown', 'touchstart', 'click'].forEach(e => window.addEventListener(e, wakeLogin, { passive: true }));
+  ['mousemove', 'mousedown', 'keydown', 'touchstart', 'click', 'scroll'].forEach(e => window.addEventListener(e, wakeLogin, { passive: true }));
+  function wakeLogin() {
+    const tag = (document.activeElement || {}).tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(wakeLogin, 10000);
+      return;
+    }
+    document.body.classList.remove('idle-login');
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => document.body.classList.add('idle-login'), 10000);
+  }
+  function capsWatch(inputId, warnId) {
+    const inp = document.getElementById(inputId);
+    if (!inp) return;
+    const show = e => {
+      let on = false;
+      try { on = e.getModifierState && e.getModifierState('CapsLock'); } catch {}
+      document.getElementById(warnId).style.display = on ? 'block' : 'none';
+    };
+    inp.addEventListener('keyup', show);
+    inp.addEventListener('blur', () => { document.getElementById(warnId).style.display = 'none'; });
+  }
+  capsWatch('password', 'capsLogin');
+  capsWatch('newPass', 'capsReset');
+  function netBadge() {
+    const b = document.getElementById('netBadge');
+    const on = navigator.onLine !== false;
+    b.textContent = on ? '● online' : '● offline';
+    b.className = on ? '' : 'off';
+    b.id = 'netBadge';
+  }
+  window.addEventListener('online', netBadge);
+  window.addEventListener('offline', netBadge);
+  netBadge();
+  fillBranches();
+  if (!hasAccounts()) {
+    hideAll();
+    document.getElementById('setupForm').style.display = 'block';
+  }
   wakeLogin();
 </script>
 <script>

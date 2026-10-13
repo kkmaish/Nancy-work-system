@@ -161,6 +161,7 @@
     <button data-sec="expenses" onclick="showSection('expenses')">💸 Expenses</button>
     <button data-sec="reports" onclick="showSection('reports')">📝 Reports</button>
     <button data-sec="ai" onclick="showSection('ai')">🤖 AI Predictor</button>
+    <button data-sec="aichat" onclick="showSection('ai');setTimeout(()=>{const el=document.getElementById('askBox');if(el)el.scrollIntoView({block:'start'});},80);return false;">💬 AI Chat</button>
     <button data-sec="upload" onclick="showSection('upload')">📤 Upload & Scan</button>
     <button data-sec="scan" onclick="showSection('upload');setTimeout(()=>{const el=document.getElementById('checkBox');if(el)el.scrollIntoView({block:'start'});},80);return false;">🔍 Scan</button>
     <button data-sec="scanned" onclick="showSection('scanned')">📑 Scanned Data</button>
@@ -326,7 +327,7 @@
     <div class="sec-head"><div class="sec-icon">🤖</div><div><h1 class="page-title">AI Predictor</h1>
     <p class="page-sub">Future closings, change detection, mistakes and solutions.</p></div></div>
     <div class="db-box">
-      <div class="db-head"><div><h2>Ask AI</h2><span style="color:#6b7280;font-size:13px;">answers from your own data</span></div></div>
+      <div class="db-head"><div id="askBox"><div><h2>Ask AI</h2><span style="color:#6b7280;font-size:13px;">answers from your own data</span></div></div></div>
       <div style="padding:18px 20px;">
         <div id="aiChat" style="max-height:300px;overflow:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
         <div class="report-row"><input id="aiQ" type="text" placeholder="e.g. what runs out this week?" style="flex:1;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;" onkeydown="if(event.key==='Enter')askAI()" /><button class="btn-small" onclick="askAI()">Ask</button></div>
@@ -761,6 +762,8 @@
         </div>
         <div class="meter"><div id="adminMeter"></div></div>
         <div id="adminText"></div>
+        <label>Admin 4-digit PIN (needed for password resets)</label>
+        <input id="adminPin" type="password" inputmode="numeric" maxlength="4" placeholder="••••" style="max-width:220px;" />
         <button class="btn-small" onclick="saveAdmin()">Save admin</button>
       </div>
       <div class="card form-card">
@@ -2271,9 +2274,15 @@
   function saveAdmin() {
     const email = document.getElementById('adminEmail').value.trim();
     const pass = document.getElementById('adminPass').value;
+    const pinEl = document.getElementById('adminPin');
+    const pin = pinEl ? pinEl.value.trim() : '';
+    if (pin && !/^[0-9]{4}$/.test(pin)) { alert('Admin PIN must be exactly 4 digits.'); return; }
     if (!validEmail(email)) { alert('Enter a valid admin email.'); return; }
     if (scorePassword(pass) < 3) { alert('Admin password too weak. Use 8+ chars with upper, lower, number and symbol.'); return; }
-    localStorage.setItem(ADMIN_KEY, JSON.stringify({ email }));
+    try {
+      const prev = JSON.parse(localStorage.getItem(ADMIN_KEY)) || {};
+      localStorage.setItem(ADMIN_KEY, JSON.stringify({ email, pin: pin || prev.pin || '' }));
+    } catch { localStorage.setItem(ADMIN_KEY, JSON.stringify({ email, pin })); }
     const auth = getAuth(); auth[email.toLowerCase()] = pass; setAuth(auth);
     sessionStorage.setItem('nancy_user', email);
     toast('Admin saved: ' + email);
