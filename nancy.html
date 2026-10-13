@@ -720,7 +720,7 @@
           <div style="font-size:34px;">🏪</div>
           <h3>12. Multi-Branch Ready</h3>
           <p class="hint" style="font-size:13px;">A second location runs on the same system with separated data.</p>
-          <div class="report-row"><span class="pill warn">Speed</span><span class="pill" style="background:#f5f3ff;color:#4c1d95;" data-req="11">planned</span></div>
+          <div class="report-row"><span class="pill warn">Speed</span><span class="pill" style="background:#dcfce7;color:#166534;" data-req="11">live ✓</span></div>
           <button class="btn-small" onclick="requestBuild(11, 'Multi-Branch Ready')">Build this</button>
         </div>
     </div>
@@ -733,7 +733,17 @@
       <span style="color:#9ca3af;">|</span>
       <a href="#password-settings" style="font-weight:700;color:#065f46;text-decoration:none;">🔑 Password Settings</a>
     </div>
-    <div id="email-settings">
+    <div class="card form-card" style="border-left:6px solid #d97706;">
+          <h3>🏪 Branch — <span id="branchCur">Main Branch</span></h3>
+          <div class="hint">Each branch keeps fully separated data on this device.</div>
+          <div class="row2">
+            <div><label>Switch branch</label><select id="branchSelect" onchange="switchBranch(this.value)"></select></div>
+            <div><label>New branch name</label><input id="branchName" type="text" placeholder="e.g. Westlands" /></div>
+          </div>
+          <button class="btn-small" onclick="addBranch()">Add branch</button>
+          <div style="overflow:auto;margin-top:10px;"><table style="min-width:0;"><thead><tr><th>Branch</th><th>Status</th><th>Action</th></tr></thead><tbody id="branchRows"></tbody></table></div>
+        </div>
+        <div id="email-settings">
       <div class="card form-card">
         <h3>Email Settings — Admin account</h3>
         <div class="row2">
@@ -1004,16 +1014,31 @@
     const h = (location.hash || '').replace('#', '');
     showSection(document.getElementById('view-' + h) ? h : 'dashboard', true);
   });
-  const LS_KEY = 'nancy_stock_days';
-  const SCAN_KEY = 'nancy_scans';
-  const PENDING_KEY = 'nancy_pending_prices';
-  const DRAFT_KEY = 'nancy_draft';
-  const STAFF_KEY = 'nancy_staff', ADMIN_KEY = 'nancy_admin', AUTH_KEY = 'nancy_auth', EMAIL_KEY = 'nancy_email_settings';
+  var LS_KEY = 'nancy_stock_days';
+  var SCAN_KEY = 'nancy_scans';
+  var PENDING_KEY = 'nancy_pending_prices';
+  var DRAFT_KEY = 'nancy_draft';
+  var STAFF_KEY = 'nancy_staff', ADMIN_KEY = 'nancy_admin', AUTH_KEY = 'nancy_auth', EMAIL_KEY = 'nancy_email_settings';
+  var CASH_KEY = 'nancy_cash', DEBT_KEY = 'nancy_debts', ORDER_KEY = 'nancy_orders', WASTE_KEY = 'nancy_waste';
+  var EXPIRY_KEY = 'nancy_expiry';
+  var SUPCOST_KEY = 'nancy_supcost';
+  var SALE_KEY = 'nancy_sales', EXP_KEY = 'nancy_expenses', PRICE_KEY = 'nancy_prices';
+  (function initBranchKeys() {
+    let b = 'main';
+    try { b = localStorage.getItem('nancy_branch') || 'main'; } catch {}
+    if (b === 'main') return;
+    [LS_KEY, SCAN_KEY, PENDING_KEY, DRAFT_KEY, STAFF_KEY, ADMIN_KEY, AUTH_KEY, EMAIL_KEY,
+     CASH_KEY, DEBT_KEY, ORDER_KEY, WASTE_KEY, EXPIRY_KEY, SUPCOST_KEY, SALE_KEY, EXP_KEY, PRICE_KEY].forEach(() => {});
+    LS_KEY += '::' + b; SCAN_KEY += '::' + b; PENDING_KEY += '::' + b; DRAFT_KEY += '::' + b;
+    STAFF_KEY += '::' + b; ADMIN_KEY += '::' + b; AUTH_KEY += '::' + b; EMAIL_KEY += '::' + b;
+    CASH_KEY += '::' + b; DEBT_KEY += '::' + b; ORDER_KEY += '::' + b; WASTE_KEY += '::' + b;
+    EXPIRY_KEY += '::' + b; SUPCOST_KEY += '::' + b; SALE_KEY += '::' + b; EXP_KEY += '::' + b; PRICE_KEY += '::' + b;
+  })();
   const CLEARITY = 1.6;
   function loadDays() { try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch { return {}; } }
   function storeDays(d) { try { localStorage.setItem(LS_KEY, JSON.stringify(d)); } catch {} }
-  function loadDocs() { try { return JSON.parse(localStorage.getItem('nancy_scanned_docs')) || []; } catch { return []; } }
-  function saveDocs(d) { try { localStorage.setItem('nancy_scanned_docs', JSON.stringify(d)); } catch {} }
+  function loadDocs() { try { return JSON.parse(localStorage.getItem(BK('nancy_scanned_docs'))) || []; } catch { return []; } }
+  function saveDocs(d) { try { localStorage.setItem(BK('nancy_scanned_docs'), JSON.stringify(d)); } catch {} }
   function docISO(doc) {
     if (doc.iso) return doc.iso;
     const dt = new Date((doc.date || '').replace(/\s*\(rectified\)\s*$/, ''));
@@ -1040,7 +1065,7 @@
   function loadStaff() { try { return JSON.parse(localStorage.getItem(STAFF_KEY)) || []; } catch { return []; } }
   function saveStaff(s) { try { localStorage.setItem(STAFF_KEY, JSON.stringify(s)); } catch {} }
   try {
-    const user = sessionStorage.getItem('nancy_user') || localStorage.getItem('nancy_user');
+    const user = sessionStorage.getItem('nancy_user') || localStorage.getItem(BK('nancy_user'));
     if (user) document.getElementById('welcome').textContent = 'Welcome, ' + user;
   } catch {}
   var allDrinks = (typeof ALL_DRINKS !== 'undefined') ? ALL_DRINKS : [];
@@ -1182,7 +1207,7 @@
   }
   function applyPendingPrices() {
     let pending = null;
-    try { pending = JSON.parse(localStorage.getItem('nancy_pending_prices')); } catch {}
+    try { pending = JSON.parse(localStorage.getItem(BK('nancy_pending_prices'))); } catch {}
     if (!pending) return;
     let applied = 0;
     document.querySelectorAll('#drinkRows tr[data-id]').forEach(row => {
@@ -1197,7 +1222,7 @@
       } else { row.querySelector('.c-price').value = p; }
       calcRow(row); applied++;
     });
-    localStorage.removeItem('nancy_pending_prices');
+    localStorage.removeItem(BK('nancy_pending_prices'));
     if (applied) toast('Applied ' + applied + ' scanned rows.');
   }
   function seedDemo(force) {
@@ -1359,7 +1384,7 @@
     document.getElementById('repSummary').textContent = period.length + ' days | total opening ' + sum(dayOpen) + ' | total closing ' + sum(dayClose);
     document.getElementById('genCount').textContent = label + ' ready';
     try {
-      const cash = JSON.parse(localStorage.getItem('nancy_cash')) || {};
+      const cash = JSON.parse(localStorage.getItem(BK('nancy_cash'))) || {};
       document.getElementById('cashSplitBody').innerHTML = period.map(k => {
         const r = cash[k];
         if (!r) return '<tr><td>' + k + '</td><td colspan="4" style="color:#6b7280;">not counted</td></tr>';
@@ -1962,9 +1987,9 @@
     if (!issues.length) {
       box.innerHTML = '<div class="report-card" style="border:2px solid #16a34a;">✅ <b>Assured ' + when + ':</b> all ' + lastParsed.length + ' rows balance. Safe to apply.</div>';
       try {
-        const log = JSON.parse(localStorage.getItem('nancy_assurance') || '[]');
+        const log = JSON.parse(localStorage.getItem(BK('nancy_assurance')) || '[]');
         log.push({ date: when, rows: lastParsed.length, result: 'pass' });
-        localStorage.setItem('nancy_assurance', JSON.stringify(log));
+        localStorage.setItem(BK('nancy_assurance'), JSON.stringify(log));
       } catch {}
     } else {
       box.innerHTML = '<div class="report-card" style="border:2px solid #b91c1c;">❌ <b>Not assured ' + when + ':</b> ' + issues.length + ' imbalance(s) remain — authorize Rectify mistakes first.<br>' + issues.slice(0, 20).map((w, i) => (i + 1) + '. ' + w).join('<br>') + '</div>';
@@ -2203,7 +2228,7 @@
     document.getElementById('resetStaffEmail').innerHTML = staff.map(s => '<option>' + s.email + '</option>').join('');
   }
   function bootScans() { try { renderScans(); } catch (e) { console.error('bootScans', e); } }
-  const CASH_KEY = 'nancy_cash', DEBT_KEY = 'nancy_debts', ORDER_KEY = 'nancy_orders', WASTE_KEY = 'nancy_waste';
+  /* keys unified above */
   function loadCash() { try { return JSON.parse(localStorage.getItem(CASH_KEY)) || {}; } catch { return {}; } }
   function loadDebts() { try { return JSON.parse(localStorage.getItem(DEBT_KEY)) || []; } catch { return []; } }
   function loadOrders() { try { return JSON.parse(localStorage.getItem(ORDER_KEY)) || []; } catch { return []; } }
@@ -2279,7 +2304,7 @@
     const all = loadCash();
     if (!all[date]) return;
     let user = 'manager';
-    try { user = sessionStorage.getItem('nancy_user') || localStorage.getItem('nancy_user') || 'manager'; } catch {}
+    try { user = sessionStorage.getItem('nancy_user') || localStorage.getItem(BK('nancy_user')) || 'manager'; } catch {}
     all[date].confirmed = user + ' @ ' + new Date().toLocaleString();
     try { localStorage.setItem(CASH_KEY, JSON.stringify(all)); } catch {}
     renderCashHist();
@@ -2329,7 +2354,7 @@
       ? list.map((d, i) => '<tr><td>' + d.name + '</td><td>' + (d.item || '-') + '</td><td><b>' + d.amount + '</b></td><td>' + d.date + '</td><td><button class="btn-green" style="margin-top:0;padding:6px 12px;" onclick="payDebt(' + i + ')">Paid</button> <button class="btn-danger" onclick="delDebt(' + i + ')">Delete</button></td></tr>').join('')
       : '<tr><td colspan="5" style="color:#6b7280;">No outstanding debts.</td></tr>';
   }
-  const EXPIRY_KEY = 'nancy_expiry';
+  /* keys unified above */
   function loadExpiry() { try { return JSON.parse(localStorage.getItem(EXPIRY_KEY)) || []; } catch { return []; } }
   function daysLeft(dateStr) {
     const ms = new Date(dateStr + 'T00:00:00') - new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00');
@@ -2421,7 +2446,7 @@
     renderOrderHist();
     toast('Order saved.');
   }
-  const SUPCOST_KEY = 'nancy_supcost';
+  /* keys unified above */
   function loadSupCost() { try { return JSON.parse(localStorage.getItem(SUPCOST_KEY)) || []; } catch { return []; } }
   function recvOrder(i) {
     const orders = loadOrders();
@@ -2453,7 +2478,7 @@
   }
   function bootRoadmap() {
     let req = [];
-    try { req = JSON.parse(localStorage.getItem('nancy_requests')) || []; } catch {}
+    try { req = JSON.parse(localStorage.getItem(BK('nancy_requests'))) || []; } catch {}
     document.querySelectorAll('[data-req]').forEach(el => {
       const i = +el.getAttribute('data-req');
       if (req.includes(i)) { el.textContent = 'requested ✓'; el.style.background = '#dcfce7'; el.style.color = '#166534'; }
@@ -2461,9 +2486,9 @@
   }
   function requestBuild(i, name) {
     let req = [];
-    try { req = JSON.parse(localStorage.getItem('nancy_requests')) || []; } catch {}
+    try { req = JSON.parse(localStorage.getItem(BK('nancy_requests'))) || []; } catch {}
     if (!req.includes(i)) req.push(i);
-    try { localStorage.setItem('nancy_requests', JSON.stringify(req)); } catch {}
+    try { localStorage.setItem(BK('nancy_requests'), JSON.stringify(req)); } catch {}
     bootRoadmap();
     toast('Noted! "' + name + '" queued for building.');
   }
@@ -2504,16 +2529,17 @@
   function exportBackup() {
     try {
       const data = {};
-      [LS_KEY, 'nancy_scanned_docs', SCAN_KEY, STAFF_KEY, ADMIN_KEY, AUTH_KEY, EMAIL_KEY, DRAFT_KEY, CASH_KEY, DEBT_KEY, ORDER_KEY, WASTE_KEY, 'nancy_assurance', PENDING_KEY].forEach(k => {
-        data[k] = localStorage.getItem(k);
-      });
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.indexOf('nancy_') === 0) data[k] = localStorage.getItem(k);
+      }
       const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = 'nancy-backup-' + new Date().toISOString().slice(0, 10) + '.json';
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-      try { localStorage.setItem('nancy_lastbackup', String(Date.now())); } catch {}
+      try { localStorage.setItem(BK('nancy_lastbackup'), String(Date.now())); } catch {}
       renderAudit();
       toast('Backup downloaded.');
     } catch (e) { alert('Backup failed: ' + e.message); }
@@ -2532,7 +2558,7 @@
     };
     r.readAsText(f);
   }
-  const SALE_KEY = 'nancy_sales', EXP_KEY = 'nancy_expenses', PRICE_KEY = 'nancy_prices';
+  /* keys unified above */
   function loadSales() { try { return JSON.parse(localStorage.getItem(SALE_KEY)) || {}; } catch { return {}; } }
   function loadExpenses() { try { return JSON.parse(localStorage.getItem(EXP_KEY)) || []; } catch { return []; } }
   function todayKey() { return new Date().toISOString().slice(0, 10); }
@@ -2735,7 +2761,7 @@
     toast('Stocktake applied to ' + date + '.');
   }
   var camStream = null, camTimer = null, lastCode = '';
-  function loadCodes() { try { return JSON.parse(localStorage.getItem('nancy_barcodes')) || {}; } catch { return {}; } }
+  function loadCodes() { try { return JSON.parse(localStorage.getItem(BK('nancy_barcodes'))) || {}; } catch { return {}; } }
   async function startCam() {
     const v = document.getElementById('camView');
     const out = document.getElementById('scanOut');
@@ -2790,7 +2816,7 @@
     if (!d) { alert('Pick a drink from the list.'); return; }
     const map = loadCodes();
     map[lastCode] = d.id;
-    try { localStorage.setItem('nancy_barcodes', JSON.stringify(map)); } catch {}
+    try { localStorage.setItem(BK('nancy_barcodes'), JSON.stringify(map)); } catch {}
     gotCodeRefresh();
     toast('Mapped to ' + d.name + '.');
   }
@@ -2836,16 +2862,16 @@
   };
   function audit(action) {
     try {
-      const log = JSON.parse(localStorage.getItem('nancy_audit') || '[]');
+      const log = JSON.parse(localStorage.getItem(BK('nancy_audit')) || '[]');
       let user = '';
-      try { user = sessionStorage.getItem('nancy_user') || localStorage.getItem('nancy_user') || ''; } catch {}
+      try { user = sessionStorage.getItem('nancy_user') || localStorage.getItem(BK('nancy_user')) || ''; } catch {}
       log.push({ t: new Date().toLocaleString(), user, action });
-      localStorage.setItem('nancy_audit', JSON.stringify(log.slice(-200)));
+      localStorage.setItem(BK('nancy_audit'), JSON.stringify(log.slice(-200)));
     } catch {}
   }
   function renderAudit() {
     let log = [];
-    try { log = JSON.parse(localStorage.getItem('nancy_audit')) || []; } catch {}
+    try { log = JSON.parse(localStorage.getItem(BK('nancy_audit'))) || []; } catch {}
     const box = document.getElementById('auditRows');
     if (!box) return;
     box.innerHTML = log.length
@@ -2854,12 +2880,12 @@
   }
   function clearAudit() {
     if (!confirm('Clear the audit trail?')) return;
-    try { localStorage.removeItem('nancy_audit'); } catch {}
+    try { localStorage.removeItem(BK('nancy_audit')); } catch {}
     renderAudit();
   }
   function backupReminder() {
     let last = null;
-    try { last = localStorage.getItem('nancy_lastbackup'); } catch {}
+    try { last = localStorage.getItem(BK('nancy_lastbackup')); } catch {}
     const box = document.getElementById('backupNote');
     if (!box) return;
     if (!last) { box.innerHTML = '<b style="color:#b45309;">No backup yet — download one below.</b>'; return; }
@@ -2879,6 +2905,62 @@
     if (navigator.share) { navigator.share({ title: "Nancy daily summary", text }).catch(() => {}); }
     else { window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank'); }
   }
+  function BK(k) {
+    let b = 'main';
+    try { b = localStorage.getItem('nancy_branch') || 'main'; } catch {}
+    return b === 'main' ? k : k + '::' + b;
+  }
+  function branchList() {
+    try { return JSON.parse(localStorage.getItem('nancy_branches')) || [{ id: 'main', name: 'Main Branch' }]; } catch { return [{ id: 'main', name: 'Main Branch' }]; }
+  }
+  function currentBranch() {
+    let b = 'main';
+    try { b = localStorage.getItem('nancy_branch') || 'main'; } catch {}
+    return b;
+  }
+  function addBranch() {
+    const name = document.getElementById('branchName').value.trim();
+    if (!name) { alert('Enter a branch name.'); return; }
+    const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || ('branch-' + Date.now());
+    const list = branchList();
+    if (list.some(b => b.id === id)) { alert('Branch already exists.'); return; }
+    list.push({ id, name });
+    try { localStorage.setItem('nancy_branches', JSON.stringify(list)); } catch {}
+    document.getElementById('branchName').value = '';
+    renderBranches();
+    toast('Branch added: ' + name);
+  }
+  function switchBranch(id) {
+    try { localStorage.setItem('nancy_branch', id); } catch {}
+    alert('Switched branch. Reloading with separated data.');
+    location.reload();
+  }
+  function deleteBranch(id) {
+    if (id === 'main') { alert('Main branch cannot be deleted.'); return; }
+    if (!confirm('Delete this branch and ALL its data? This cannot be undone.')) return;
+    try {
+      const rm = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.endsWith('::' + id)) rm.push(k);
+      }
+      rm.forEach(k => localStorage.removeItem(k));
+      const list = branchList().filter(b => b.id !== id);
+      localStorage.setItem('nancy_branches', JSON.stringify(list));
+      if (currentBranch() === id) localStorage.setItem('nancy_branch', 'main');
+    } catch {}
+    renderBranches();
+    toast('Branch deleted.');
+  }
+  function renderBranches() {
+    const list = branchList();
+    const cur = currentBranch();
+    document.getElementById('branchCur').textContent = (list.find(b => b.id === cur) || { name: cur }).name;
+    const sel = document.getElementById('branchSelect');
+    sel.innerHTML = list.map(b => '<option value="' + b.id + '"' + (b.id === cur ? ' selected' : '') + '>' + b.name + '</option>').join('');
+    document.getElementById('branchRows').innerHTML = list.map(b =>
+      '<tr><td>' + b.name + '</td><td>' + (b.id === cur ? '<span class="pill ok">current</span>' : '<button class="btn-green" style="margin-top:0;padding:6px 12px;" onclick="switchBranch(\'' + b.id + '\')">Switch</button>') + '</td><td>' + (b.id === 'main' ? '-' : '<button class="btn-danger" onclick="deleteBranch(\'' + b.id + '\')">Delete</button>') + '</td></tr>').join('');
+  }
   function settingsInit() {
     try {
       const admin = JSON.parse(localStorage.getItem(ADMIN_KEY));
@@ -2890,6 +2972,7 @@
       }
     } catch {}
     renderStaff();
+    renderBranches();
     renderAudit();
     backupReminder();
   }
