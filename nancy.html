@@ -169,6 +169,9 @@
     <button data-sec="debts" onclick="showSection('debts')">📒 Debts</button>
     <button data-sec="orders" onclick="showSection('orders')">📦 Orders</button>
     <button data-sec="wastage" onclick="showSection('wastage')">🧾 Wastage</button>
+    <button data-sec="stocktake" onclick="showSection('stocktake')">⚡ Stocktake</button>
+    <button data-sec="scan" onclick="showSection('scan')">📷 Barcode</button>
+    <button data-sec="roadmap" onclick="showSection('roadmap')">🌟 Roadmap</button>
     <button data-sec="settings" onclick="showSection('settings')">⚙️ Settings</button>
     <a class="side-logout" href="index.html" style="color:#fde68a;font-weight:700;font-size:14px;padding:12px 8px;text-decoration:none;">⏻ Logout</a>
   </div>
@@ -197,6 +200,7 @@
         <button class="btn-small" onclick="showSection('reports')">Weekly / monthly PDF</button>
         <button class="btn-small" onclick="showSection('ai')">Run AI predictor</button>
         <button class="btn-small" onclick="showSection('upload')">Upload a sheet</button>
+            <button class="btn-small" onclick="shareToday()">Share today</button>
       </div>
     </div>
   </div>
@@ -281,6 +285,7 @@
           <div class="report-card"><h3>Opening chart (by item)</h3><canvas id="chOpening" height="220"></canvas></div>
           <div class="report-card"><h3>Closing graph (by item)</h3><canvas id="chClosing" height="220"></canvas></div>
           <div class="report-card"><h3>Opening vs Closing per day</h3><canvas id="chDaily" height="220"></canvas></div>
+            <div class="report-card"><h3>Daily profit (sales − expenses)</h3><canvas id="chProfit" height="220"></canvas><div id="profitTotal" style="font-size:13px;color:#6b7280;margin-top:6px;"></div></div>
         </div>
       </div>
     </div>
@@ -313,6 +318,7 @@
         </div>
         <div class="report-card" style="margin-top:16px;"><h3>Every opening (all items × every day)</h3><div style="overflow:auto;"><table class="rep-table"><thead id="openHead"></thead><tbody id="openBody"></tbody></table></div></div>
         <div class="report-card" style="margin-top:16px;"><h3>Every closing (all items × every day)</h3><div style="overflow:auto;"><table class="rep-table"><thead id="closeHead"></thead><tbody id="closeBody"></tbody></table></div></div>
+            <div class="report-card" style="margin-top:16px;"><h3>Cash vs Mpesa split (each day)</h3><div style="overflow:auto;"><table class="rep-table"><thead><tr><th>Day</th><th>Expected</th><th>Cash</th><th>Mpesa</th><th>Diff</th></tr></thead><tbody id="cashSplitBody"></tbody></table></div></div>
       </div>
     </div>
   </div>
@@ -512,7 +518,7 @@
     </div>
     <div class="card">
       <h3>History</h3>
-      <div style="overflow:auto;"><table style="min-width:0;"><thead><tr><th>Date</th><th>Expected</th><th>Cash</th><th>Mpesa</th><th>Difference</th><th>Handover</th><th>Status</th></tr></thead><tbody id="cashRows"></tbody></table></div>
+      <div style="overflow:auto;"><table style="min-width:0;"><thead><tr><th>Date</th><th>Expected</th><th>Cash</th><th>Mpesa</th><th>Difference</th><th>Handover</th><th>Status</th><th>Sign-off</th></tr></thead><tbody id="cashRows"></tbody></table></div>
     </div>
   </div>
   <div class="view" id="view-debts" style="display:none;">
@@ -550,9 +556,24 @@
       </div>
       <div style="overflow:auto;"><table style="min-width:0;"><thead><tr><th>Item</th><th>Closing</th><th>Order qty</th><th>Est. cost</th></tr></thead><tbody id="orderRows"><tr><td colspan="4">Press Generate.</td></tr></tbody></table></div>
     </div>
+    <div class="card form-card">
+      <h3>⏳ Expiry watch</h3>
+      <div id="expiryAlert" style="font-size:13px;margin-bottom:8px;"></div>
+      <div class="row2">
+        <div><label>Item</label><input id="expItem" list="drinkNames" type="text" placeholder="Drink" /></div>
+        <div><label>Expiry date</label><input id="expExpiry" type="date" /></div>
+      </div>
+      <button class="btn-small" onclick="addExpiry()">Track expiry</button>
+      <div style="overflow:auto;margin-top:10px;"><table style="min-width:0;"><thead><tr><th>Item</th><th>Expires</th><th>Left</th><th>Action</th></tr></thead><tbody id="expiryRows"></tbody></table></div>
+    </div>
     <div class="card">
       <h3>Saved orders</h3>
       <div style="overflow:auto;"><table style="min-width:0;"><thead><tr><th>Date</th><th>Supplier</th><th>Lines</th><th>Est. cost</th><th>Status</th><th>Action</th></tr></thead><tbody id="orderHist"></tbody></table></div>
+    </div>
+    <div class="card">
+      <h3>Supplier price history</h3>
+      <div class="hint">Actual amounts paid per supplier. Flags jumps over 10% vs the previous order.</div>
+      <div style="overflow:auto;margin-top:10px;"><table style="min-width:0;"><thead><tr><th>Supplier</th><th>Date</th><th>Est.</th><th>Paid</th><th>Check</th></tr></thead><tbody id="supCostRows"></tbody></table></div>
     </div>
   </div>
   <div class="view" id="view-wastage" style="display:none;">
@@ -573,6 +594,135 @@
     <div class="card">
       <h3>Log</h3>
       <div style="overflow:auto;"><table style="min-width:0;"><thead><tr><th>Item</th><th>Qty</th><th>Reason</th><th>Date</th><th>Action</th></tr></thead><tbody id="wasteRows"></tbody></table></div>
+    </div>
+  </div>
+  <div class="view" id="view-stocktake" style="display:none;">
+    <h1 class="page-title">Fast Stocktake</h1>
+    <p class="page-sub">Tap +/− while counting. Variances vs last closing appear live. <b id="countTotal"></b></p>
+    <div class="db-box">
+      <div class="db-head">
+        <div><h2>Count sheet</h2><span id="countInfo"></span></div>
+        <div class="report-row">
+          <input id="countSearch" type="text" placeholder="Find item..." oninput="renderCount()" style="width:200px;" />
+          <input type="date" id="countDate" style="width:auto;" />
+          <button class="btn-green" onclick="applyCount()">Apply as closing</button>
+        </div>
+      </div>
+      <div style="overflow:auto;"><table style="min-width:0;"><thead><tr><th>Item</th><th>Expected</th><th>Count</th><th>Variance</th></tr></thead><tbody id="countRows"></tbody></table></div>
+    </div>
+  </div>
+  <div class="view" id="view-scan" style="display:none;">
+    <h1 class="page-title">Barcode Scanner</h1>
+    <p class="page-sub">Point the camera at a bottle barcode. Assign once, then count or sell in one tap.</p>
+    <div class="card form-card">
+      <h3>Camera</h3>
+      <video id="camView" playsinline muted style="width:100%;max-height:300px;background:#000;border-radius:12px;display:none;"></video>
+      <div class="report-row">
+        <button class="btn-small" onclick="startCam()">Start camera</button>
+        <button class="btn-small" onclick="stopCam()">Stop</button>
+      </div>
+      <div id="scanOut" style="font-size:14px;"></div>
+    </div>
+    <div class="card form-card" id="codeBox" style="display:none;">
+      <h3>Barcode: <span id="codeVal"></span></h3>
+      <div id="codeKnown"></div>
+      <label>Assign to item (first time only)</label>
+      <input id="codeItem" list="drinkNames" type="text" placeholder="Drink name..." />
+      <button class="btn-small" onclick="assignCode()">Save mapping</button>
+      <div class="report-row">
+        <button class="btn-green" onclick="codeCount()">+1 to count</button>
+        <button class="btn-green" onclick="codeSell()">Record sale</button>
+      </div>
+    </div>
+  </div>
+  <div class="view" id="view-roadmap" style="display:none;">
+    <h1 class="page-title">Roadmap to Perfect</h1>
+    <p class="page-sub">Twelve upgrades that make this system unbeatable. Tap <b>Build this</b> on anything you want next.</p>
+    <div class="cards">
+        <div class="card gold">
+          <div style="font-size:34px;">💳</div>
+          <h3>1. Mpesa vs Cash Split</h3>
+          <p class="hint" style="font-size:13px;">Record Mpesa and cash separately every day, so shortages cannot hide between them.</p>
+          <div class="report-row"><span class="pill warn">Money truth</span><span class="pill" style="background:#dcfce7;color:#166534;" data-req="0">live ✓</span></div>
+          <button class="btn-small" onclick="requestBuild(0, 'Mpesa vs Cash Split')">Build this</button>
+        </div>
+        <div class="card gold">
+          <div style="font-size:34px;">📈</div>
+          <h3>2. Daily Profit Summary</h3>
+          <p class="hint" style="font-size:13px;">Revenue minus expenses as one number every morning, with a week trend.</p>
+          <div class="report-row"><span class="pill warn">Money truth</span><span class="pill" style="background:#dcfce7;color:#166534;" data-req="1">live ✓</span></div>
+          <button class="btn-small" onclick="requestBuild(1, 'Daily Profit Summary')">Build this</button>
+        </div>
+        <div class="card purple">
+          <div style="font-size:34px;">⏳</div>
+          <h3>3. Expiry-Date Tracking</h3>
+          <p class="hint" style="font-size:13px;">Flag beers and ciders expiring within 30 days before they cost you.</p>
+          <div class="report-row"><span class="pill warn">Stock truth</span><span class="pill" style="background:#dcfce7;color:#166534;" data-req="2">live ✓</span></div>
+          <button class="btn-small" onclick="requestBuild(2, 'Expiry-Date Tracking')">Build this</button>
+        </div>
+        <div class="card purple">
+          <div style="font-size:34px;">🏷️</div>
+          <h3>4. Supplier Price History</h3>
+          <p class="hint" style="font-size:13px;">Track cost per order per supplier and catch overcharging instantly.</p>
+          <div class="report-row"><span class="pill warn">Stock truth</span><span class="pill" style="background:#dcfce7;color:#166534;" data-req="3">live ✓</span></div>
+          <button class="btn-small" onclick="requestBuild(3, 'Supplier Price History')">Build this</button>
+        </div>
+        <div class="card purple">
+          <div style="font-size:34px;">⚡</div>
+          <h3>5. Fast Stocktake Mode</h3>
+          <p class="hint" style="font-size:13px;">Tap +/− per item while counting; variances vs expected closing listed automatically.</p>
+          <div class="report-row"><span class="pill warn">Stock truth</span><span class="pill" style="background:#dcfce7;color:#166534;" data-req="4">live ✓</span></div>
+          <button class="btn-small" onclick="requestBuild(4, 'Fast Stocktake Mode')">Build this</button>
+        </div>
+        <div class="card pink">
+          <div style="font-size:34px;">🔑</div>
+          <h3>6. Staff Roles + PIN Login</h3>
+          <p class="hint" style="font-size:13px;">Cashiers see sales only, managers see everything; personal PINs, no shared passwords.</p>
+          <div class="report-row"><span class="pill warn">People control</span><span class="pill" style="background:#dcfce7;color:#166534;" data-req="5">live ✓</span></div>
+          <button class="btn-small" onclick="requestBuild(5, 'Staff Roles + PIN Login')">Build this</button>
+        </div>
+        <div class="card pink">
+          <div style="font-size:34px;">🤝</div>
+          <h3>7. Shift Handover Sign-off</h3>
+          <p class="hint" style="font-size:13px;">Receiver confirms with one tap — an unbroken responsibility chain.</p>
+          <div class="report-row"><span class="pill warn">People control</span><span class="pill" style="background:#dcfce7;color:#166534;" data-req="6">live ✓</span></div>
+          <button class="btn-small" onclick="requestBuild(6, 'Shift Handover Sign-off')">Build this</button>
+        </div>
+        <div class="card green">
+          <div style="font-size:34px;">💾</div>
+          <h3>8. Auto-Backup Reminders</h3>
+          <p class="hint" style="font-size:13px;">Weekly nudge plus one-tap backup to phone and Downloads.</p>
+          <div class="report-row"><span class="pill warn">Safety</span><span class="pill" style="background:#dcfce7;color:#166534;" data-req="7">live ✓</span></div>
+          <button class="btn-small" onclick="requestBuild(7, 'Auto-Backup Reminders')">Build this</button>
+        </div>
+        <div class="card green">
+          <div style="font-size:34px;">🕵️</div>
+          <h3>9. Audit Trail</h3>
+          <p class="hint" style="font-size:13px;">Who changed what and when — price edits, deleted scans, cleared debts all traceable.</p>
+          <div class="report-row"><span class="pill warn">Safety</span><span class="pill" style="background:#dcfce7;color:#166534;" data-req="8">live ✓</span></div>
+          <button class="btn-small" onclick="requestBuild(8, 'Audit Trail')">Build this</button>
+        </div>
+        <div class="card wine">
+          <div style="font-size:34px;">📷</div>
+          <h3>10. Barcode Scanning</h3>
+          <p class="hint" style="font-size:13px;">Phone camera reads bottle barcodes straight into counts and sales. Fastest counting upgrade.</p>
+          <div class="report-row"><span class="pill warn">Speed</span><span class="pill" style="background:#dcfce7;color:#166534;" data-req="9">live ✓</span></div>
+          <button class="btn-small" onclick="requestBuild(9, 'Barcode Scanning')">Build this</button>
+        </div>
+        <div class="card wine">
+          <div style="font-size:34px;">💬</div>
+          <h3>11. Share Daily Summary</h3>
+          <p class="hint" style="font-size:13px;">Send the day summary to yourself or staff via share/WhatsApp in one tap.</p>
+          <div class="report-row"><span class="pill warn">Speed</span><span class="pill" style="background:#dcfce7;color:#166534;" data-req="10">live ✓</span></div>
+          <button class="btn-small" onclick="requestBuild(10, 'Share Daily Summary')">Build this</button>
+        </div>
+        <div class="card wine">
+          <div style="font-size:34px;">🏪</div>
+          <h3>12. Multi-Branch Ready</h3>
+          <p class="hint" style="font-size:13px;">A second location runs on the same system with separated data.</p>
+          <div class="report-row"><span class="pill warn">Speed</span><span class="pill" style="background:#f5f3ff;color:#4c1d95;" data-req="11">planned</span></div>
+          <button class="btn-small" onclick="requestBuild(11, 'Multi-Branch Ready')">Build this</button>
+        </div>
     </div>
   </div>
   <div class="view" id="view-settings" style="display:none;">
@@ -600,6 +750,10 @@
           <div><label>Staff name</label><input id="staffName" type="text" placeholder="e.g. Mary" /></div>
           <div><label>Staff email</label><input id="staffEmail" type="email" placeholder="staff@example.com" /></div>
         </div>
+        <div class="row2">
+          <div><label>Role</label><select id="staffRole"><option value="cashier">Cashier (sales + stock only)</option><option value="manager">Manager (everything)</option></select></div>
+          <div><label>4-digit PIN</label><input id="staffPin" type="password" inputmode="numeric" maxlength="4" placeholder="••••" /></div>
+        </div>
         <label>Staff password</label>
         <input id="staffPass" type="password" placeholder="••••••••" oninput="checkStrength('staffPass','staffMeter','staffText')" />
         <div class="meter"><div id="staffMeter"></div></div>
@@ -610,7 +764,7 @@
       </div>
       <div class="card">
         <h3>Staff list</h3>
-        <table style="min-width:0;"><thead><tr><th>Name</th><th>Email</th><th>Action</th></tr></thead><tbody id="staffRows"></tbody></table>
+        <table style="min-width:0;"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Action</th></tr></thead><tbody id="staffRows"></tbody></table>
       </div>
       <div class="card form-card">
         <h3>Email Settings — System emails</h3>
@@ -643,7 +797,14 @@
         <h3>💾 Backup & Restore</h3>
         <div class="hint">Downloads everything (stock days, scans, staff, cash, debts, orders, wastage) as one file. Restore it on this or another device.</div>
         <button class="btn-small" onclick="exportBackup()">Download backup</button>
-        <label>Restore from file</label>
+        <div id="backupNote" style="font-size:13px;margin-top:8px;"></div>
+          <div class="card form-card" style="margin-top:16px;">
+            <h3>Audit trail</h3>
+            <div class="hint">Who changed what and when (latest 60 shown).</div>
+            <div style="overflow:auto;margin-top:8px;"><table style="min-width:0;"><thead><tr><th>Time</th><th>User</th><th>Action</th></tr></thead><tbody id="auditRows"></tbody></table></div>
+            <button class="btn-danger" onclick="clearAudit()">Clear audit</button>
+          </div>
+          <label>Restore from file</label>
         <input id="backupFile" type="file" accept=".json" onchange="importBackup()" />
       </div>
     </div>
@@ -826,7 +987,7 @@
     clearTimeout(t._h);
     t._h = setTimeout(() => t.classList.remove('show'), 2600);
   }
-  let currentSection = 'dashboard';
+  var currentSection = 'dashboard';
   function showSection(id, skipHash) {
     try {
       currentSection = id;
@@ -882,23 +1043,18 @@
     const user = sessionStorage.getItem('nancy_user') || localStorage.getItem('nancy_user');
     if (user) document.getElementById('welcome').textContent = 'Welcome, ' + user;
   } catch {}
-  let allDrinks = (typeof ALL_DRINKS !== 'undefined') ? ALL_DRINKS : [];
-  if (allDrinks.length > 0) { safeBoot(); }
-  else {
-    fetch('drinks.json').then(r => r.json()).then(data => { allDrinks = data; safeBoot(); }).catch(() => {
-      document.getElementById('drinkRows').innerHTML = '<tr><td colspan="9">Could not load drinks database</td></tr>';
-      document.getElementById('drinkTotal').textContent = 'Database not loaded';
-    });
-  }
+  var allDrinks = (typeof ALL_DRINKS !== 'undefined') ? ALL_DRINKS : [];
   function safeBoot() {
     try { bootDrinks(); } catch (e) { console.error('bootDrinks', e); }
     try { bootReports(); } catch (e) { console.error('bootReports', e); }
     try { bootScans(); } catch (e) { console.error('bootScans', e); }
     try { bootSettings(); } catch (e) { console.error('bootSettings', e); }
+    try { bootRoadmap(); } catch (e) { console.error('bootRoadmap', e); }
     try { bootCash(); } catch (e) { console.error('bootCash', e); }
     try { bootDebts(); } catch (e) { console.error('bootDebts', e); }
     try { bootOrders(); } catch (e) { console.error('bootOrders', e); }
     try { bootWaste(); } catch (e) { console.error('bootWaste', e); }
+    try { bootStocktake(); } catch (e) { console.error('bootStocktake', e); }
     try { bootSales(); } catch (e) { console.error('bootSales', e); }
     try { bootExpenses(); } catch (e) { console.error('bootExpenses', e); }
     try { updateStats(); } catch (e) { console.error('updateStats', e); }
@@ -945,7 +1101,7 @@
     row.querySelector('.c-sales').textContent = sales;
     row.querySelector('.c-amount').textContent = sales * price;
   }
-  let draftTimer = null;
+  var draftTimer = null;
   document.getElementById('drinkRows').addEventListener('input', e => {
     const row = e.target.closest('tr');
     if (!row) return;
@@ -1089,7 +1245,7 @@
     updateStats();
     toast('Saved ' + date + '.');
   }
-  let chO = null, chC = null, chD = null, rp1 = null, rp2 = null, rp3 = null;
+  var chO = null, chC = null, chD = null, rp1 = null, rp2 = null, rp3 = null;
   function bootReports() {
     const days = reportSource();
     const keys = Object.keys(days).sort();
@@ -1120,6 +1276,7 @@
       data: { labels: keys, datasets: [
         { label: 'Opening total', data: dailyOpen, backgroundColor: '#059669' },
         { label: 'Closing total', data: dailyClose, backgroundColor: '#d97706' } ] }, options: { responsive: true } });
+    try { renderProfit(); } catch (e) { console.error('renderProfit', e); }
   }
   function scannedAsDays() {
     const map = {};
@@ -1138,6 +1295,27 @@
     return map;
   }
   function reportSource() { return Object.assign(loadDays(), scannedAsDays()); }
+  var chProfit = null;
+  function renderProfit() {
+    const sales = loadSales(), exps = loadExpenses();
+    const daySet = {};
+    Object.keys(sales).forEach(k => daySet[k] = 1);
+    exps.forEach(e => { if (e.date) daySet[e.date.slice(0, 10)] = 1; });
+    const keys = Object.keys(daySet).sort().slice(-14);
+    const rev = keys.map(k => (sales[k] || []).reduce((a, s) => a + (+s.amount || 0), 0));
+    const exp = keys.map(k => exps.filter(e => (e.date || '').slice(0, 10) === k).reduce((a, e) => a + (+e.amount || 0), 0));
+    const prof = rev.map((v, i) => v - exp[i]);
+    if (chProfit) chProfit.destroy();
+    if (!keys.length) {
+      document.getElementById('profitTotal').textContent = 'Record sales and expenses to see profit.';
+      return;
+    }
+    document.getElementById('profitTotal').textContent = 'Total profit (shown days): ' + prof.reduce((a, b) => a + b, 0);
+    if (typeof Chart === 'undefined') return;
+    chProfit = new Chart(document.getElementById('chProfit'), { type: 'bar',
+      data: { labels: keys, datasets: [{ label: 'Profit', data: prof, backgroundColor: prof.map(v => v >= 0 ? '#059669' : '#dc2626') }] },
+      options: { responsive: true } });
+  }
   function togglePeriod() {
     const t = document.getElementById('repType').value;
     document.getElementById('weekWrap').style.display = t === 'week' ? '' : 'none';
@@ -1180,6 +1358,14 @@
     document.getElementById('repTitle').textContent = "Nancy's System — " + label;
     document.getElementById('repSummary').textContent = period.length + ' days | total opening ' + sum(dayOpen) + ' | total closing ' + sum(dayClose);
     document.getElementById('genCount').textContent = label + ' ready';
+    try {
+      const cash = JSON.parse(localStorage.getItem('nancy_cash')) || {};
+      document.getElementById('cashSplitBody').innerHTML = period.map(k => {
+        const r = cash[k];
+        if (!r) return '<tr><td>' + k + '</td><td colspan="4" style="color:#6b7280;">not counted</td></tr>';
+        return '<tr><td>' + k + '</td><td>' + r.expected + '</td><td>' + r.cash + '</td><td>' + r.mpesa + '</td><td><b>' + (r.cash + r.mpesa - r.expected) + '</b></td></tr>';
+      }).join('');
+    } catch {}
     const headHtml = '<tr><th>Item</th>' + period.map(k => '<th>' + k.slice(5) + '</th>').join('') + '<th>Total</th></tr>';
     document.getElementById('openHead').innerHTML = headHtml;
     document.getElementById('closeHead').innerHTML = headHtml;
@@ -1211,7 +1397,7 @@
     const days = loadDays();
     return Object.keys(days).sort().map(k => ({ day: k, open: +((days[k].opening || {})[id] ?? NaN), close: +((days[k].closing || {})[id] ?? NaN) }));
   }
-  let chP = null;
+  var chP = null;
   function runAI() {
     const days = loadDays();
     const keys = Object.keys(days).sort().filter(k => k.indexOf('demo-') !== 0);
@@ -1284,8 +1470,8 @@
     box.innerHTML = html;
     document.getElementById('scanCheckCount').textContent = docs.length + ' document(s) checked';
   }
-  let scanURLs = [], clearedThumbs = {}, clearedFull = {};
-  let lastText = '', lastParsed = [], lastUnparsed = '', lastRows = [], lastFound = {};
+  var scanURLs = [], clearedThumbs = {}, clearedFull = {};
+  var lastText = '', lastParsed = [], lastUnparsed = '', lastRows = [], lastFound = {};
   function norm(s) { return (s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
   function matchDrink(line) {
     const low = line.toLowerCase(), nl = norm(line);
@@ -1877,6 +2063,7 @@
     scanDataInit();
     aiCheckAll();
     updateStats();
+    audit('Rectified all scanned mistakes at once');
     alert('All mistakes rectified at once.');
   }
   function scanDataInit() {
@@ -1969,13 +2156,17 @@
     if (!name) { alert('Enter staff name.'); return; }
     if (!validEmail(email)) { alert('Enter a valid staff email.'); return; }
     if (scorePassword(pass) < 3) { alert('Staff password too weak. Generate a strong one.'); return; }
+    const pin = document.getElementById('staffPin').value.trim();
+    const role = document.getElementById('staffRole').value;
+    if (!/^[0-9]{4}$/.test(pin)) { alert('PIN must be exactly 4 digits.'); return; }
     const staff = loadStaff();
     if (staff.some(s => s.email.toLowerCase() === email.toLowerCase())) { alert('Staff email already exists.'); return; }
-    staff.push({ name, email });
+    staff.push({ name, email, role, pin });
     saveStaff(staff);
     const auth = getAuth(); auth[email.toLowerCase()] = pass; setAuth(auth);
     document.getElementById('staffName').value = '';
     document.getElementById('staffEmail').value = '';
+    document.getElementById('staffPin').value = '';
     document.getElementById('staffPass').value = '';
     renderStaff();
     updateStats();
@@ -2007,8 +2198,8 @@
   function renderStaff() {
     const staff = loadStaff();
     document.getElementById('staffRows').innerHTML = staff.length
-      ? staff.map(s => '<tr><td>' + s.name + '</td><td>' + s.email + '</td><td><button class="btn-danger" onclick="removeStaff(\'' + s.email + '\')">Remove</button></td></tr>').join('')
-      : '<tr><td colspan="3" style="color:#6b7280;">No staff yet.</td></tr>';
+      ? staff.map(s => '<tr><td>' + s.name + '</td><td>' + s.email + '</td><td>' + (s.role || 'cashier') + '</td><td><button class="btn-danger" onclick="removeStaff(\'' + s.email + '\')">Remove</button></td></tr>').join('')
+      : '<tr><td colspan="4" style="color:#6b7280;">No staff yet.</td></tr>';
     document.getElementById('resetStaffEmail').innerHTML = staff.map(s => '<option>' + s.email + '</option>').join('');
   }
   function bootScans() { try { renderScans(); } catch (e) { console.error('bootScans', e); } }
@@ -2069,6 +2260,7 @@
     };
     try { localStorage.setItem(CASH_KEY, JSON.stringify(all)); } catch {}
     renderCashHist();
+    audit('Cash reconciliation saved for ' + date);
     toast('Reconciliation saved for ' + date + '.');
   }
   function renderCashHist() {
@@ -2078,9 +2270,21 @@
       ? keys.map(k => {
           const r = all[k], diff = r.cash + r.mpesa - r.expected;
           const hand = (r.by || r.to) ? ((r.by || '?') + ' → ' + (r.to || '?') + (r.note ? ' (' + r.note + ')' : '')) : '-';
-          return '<tr><td>' + k + '</td><td>' + r.expected + '</td><td>' + r.cash + '</td><td>' + r.mpesa + '</td><td><b>' + diff + '</b></td><td>' + hand + '</td><td>' + (diff === 0 ? '<span class="pill ok">balanced</span>' : '<span class="pill bad">off</span>') + '</td></tr>';
+          const signed = r.confirmed ? '<span class="pill ok">signed: ' + r.confirmed + '</span>' : '<button class="btn-green" style="margin-top:0;padding:6px 12px;" onclick="confirmCash(\'' + k + '\')">Sign off</button>';
+          return '<tr><td>' + k + '</td><td>' + r.expected + '</td><td>' + r.cash + '</td><td>' + r.mpesa + '</td><td><b>' + diff + '</b></td><td>' + hand + '</td><td>' + (diff === 0 ? '<span class="pill ok">balanced</span>' : '<span class="pill bad">off</span>') + '</td><td>' + signed + '</td></tr>';
         }).join('')
-      : '<tr><td colspan="7" style="color:#6b7280;">No reconciliations yet.</td></tr>';
+      : '<tr><td colspan="8" style="color:#6b7280;">No reconciliations yet.</td></tr>';
+  }
+  function confirmCash(date) {
+    const all = loadCash();
+    if (!all[date]) return;
+    let user = 'manager';
+    try { user = sessionStorage.getItem('nancy_user') || localStorage.getItem('nancy_user') || 'manager'; } catch {}
+    all[date].confirmed = user + ' @ ' + new Date().toLocaleString();
+    try { localStorage.setItem(CASH_KEY, JSON.stringify(all)); } catch {}
+    renderCashHist();
+    audit('Handover confirmed for ' + date);
+    toast('Handover signed off.');
   }
   function bootDebts() {
     document.getElementById('debtDate').value = new Date().toISOString().slice(0, 10);
@@ -2108,6 +2312,7 @@
     list.splice(i, 1);
     try { localStorage.setItem(DEBT_KEY, JSON.stringify(list)); } catch {}
     renderDebts();
+    audit('Debt cleared: ' + d.name + ' ' + d.amount);
     toast('Cleared.');
   }
   function delDebt(i) {
@@ -2124,7 +2329,62 @@
       ? list.map((d, i) => '<tr><td>' + d.name + '</td><td>' + (d.item || '-') + '</td><td><b>' + d.amount + '</b></td><td>' + d.date + '</td><td><button class="btn-green" style="margin-top:0;padding:6px 12px;" onclick="payDebt(' + i + ')">Paid</button> <button class="btn-danger" onclick="delDebt(' + i + ')">Delete</button></td></tr>').join('')
       : '<tr><td colspan="5" style="color:#6b7280;">No outstanding debts.</td></tr>';
   }
+  const EXPIRY_KEY = 'nancy_expiry';
+  function loadExpiry() { try { return JSON.parse(localStorage.getItem(EXPIRY_KEY)) || []; } catch { return []; } }
+  function daysLeft(dateStr) {
+    const ms = new Date(dateStr + 'T00:00:00') - new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00');
+    return Math.round(ms / 86400000);
+  }
+  function addExpiry() {
+    const item = document.getElementById('expItem').value.trim();
+    const date = document.getElementById('expExpiry').value;
+    if (!item) { alert('Enter the item.'); return; }
+    if (!date) { alert('Pick the expiry date.'); return; }
+    const list = loadExpiry();
+    list.push({ item, date });
+    try { localStorage.setItem(EXPIRY_KEY, JSON.stringify(list)); } catch {}
+    document.getElementById('expItem').value = '';
+    renderExpiry();
+    toast('Expiry tracked.');
+  }
+  function delExpiry(i) {
+    const list = loadExpiry();
+    list.splice(i, 1);
+    try { localStorage.setItem(EXPIRY_KEY, JSON.stringify(list)); } catch {}
+    renderExpiry();
+  }
+  function renderExpiry() {
+    const list = loadExpiry().slice().sort((a, b) => (a.date < b.date ? -1 : 1));
+    const urgent = list.filter(e => daysLeft(e.date) <= 30);
+    document.getElementById('expiryAlert').innerHTML = urgent.length
+      ? '<b style="color:#b91c1c;">⚠️ ' + urgent.length + ' item(s) expiring within 30 days: </b>' + urgent.map(e => e.item + ' (' + e.date + ')').join(', ')
+      : '<span style="color:#16a34a;">All tracked stock fresh.</span>';
+    document.getElementById('expiryRows').innerHTML = list.length
+      ? list.map((e) => {
+          const i = loadExpiry().indexOf(e);
+          const d = daysLeft(e.date);
+          return '<tr><td>' + e.item + '</td><td>' + e.date + '</td><td><b style="color:' + (d < 0 ? '#b91c1c' : d <= 30 ? '#d97706' : '#16a34a') + ';">' + (d < 0 ? 'EXPIRED ' + Math.abs(d) + 'd ago' : d + ' days') + '</b></td><td><button class="btn-danger" onclick="delExpiry(' + i + ')">Delete</button></td></tr>';
+        }).join('')
+      : '<tr><td colspan="4" style="color:#6b7280;">No expiries tracked.</td></tr>';
+  }
+  function renderSupCost() {
+    const hist = loadSupCost();
+    const box = document.getElementById('supCostRows');
+    if (!box) return;
+    const lastBySup = {};
+    const rows = hist.map(rec => {
+      const prev = lastBySup[rec.supplier];
+      lastBySup[rec.supplier] = rec.actual;
+      const up = prev !== undefined && prev > 0 && rec.actual > prev * 1.1;
+      return { rec, up, pct: up ? Math.round((rec.actual / prev - 1) * 100) : 0 };
+    }).reverse();
+    box.innerHTML = rows.length
+      ? rows.map(r => '<tr><td>' + r.rec.supplier + '</td><td>' + r.rec.date + '</td><td>' + r.rec.est + '</td><td><b>' + r.rec.actual + '</b></td><td>' + (r.up ? '<span class="pill bad">overcharge? +' + r.pct + '%</span>' : '<span class="pill ok">ok</span>') + '</td></tr>').join('')
+      : '<tr><td colspan="5" style="color:#6b7280;">No supplier costs yet. Mark an order received to log the actual paid amount.</td></tr>';
+  }
   function bootOrders() {
+    renderExpiry();
+    renderSupCost();
     renderOrderHist();
     const dl = document.getElementById('supplierNames');
     if (dl) dl.innerHTML = supplierList().map(s => '<option value="' + s + '">').join('');
@@ -2161,11 +2421,23 @@
     renderOrderHist();
     toast('Order saved.');
   }
+  const SUPCOST_KEY = 'nancy_supcost';
+  function loadSupCost() { try { return JSON.parse(localStorage.getItem(SUPCOST_KEY)) || []; } catch { return []; } }
   function recvOrder(i) {
     const orders = loadOrders();
     if (orders[i]) orders[i].status = 'received';
     try { localStorage.setItem(ORDER_KEY, JSON.stringify(orders)); } catch {}
+    const o = orders[i];
+    if (o) {
+      const v = prompt('Actual amount paid to ' + (o.supplier || 'supplier') + ' (est. ' + o.cost + ')? Leave blank to skip.', o.cost);
+      if (v !== null && v !== '' && !isNaN(+v)) {
+        const hist = loadSupCost();
+        hist.push({ supplier: o.supplier || '-', date: new Date().toISOString().slice(0, 10), est: o.cost, actual: +v });
+        try { localStorage.setItem(SUPCOST_KEY, JSON.stringify(hist)); } catch {}
+      }
+    }
     renderOrderHist();
+    renderSupCost();
   }
   function delOrder(i) {
     const orders = loadOrders();
@@ -2178,6 +2450,22 @@
     document.getElementById('orderHist').innerHTML = orders.length
       ? orders.map((o, i) => '<tr><td>' + o.date + '</td><td>' + (o.supplier || '-') + '</td><td>' + o.lines.length + '</td><td><b>' + o.cost + '</b></td><td>' + (o.status === 'received' ? '<span class="pill ok">received</span>' : '<span class="pill warn">pending</span>') + '</td><td>' + (o.status === 'received' ? '' : '<button class="btn-green" style="margin-top:0;padding:6px 12px;" onclick="recvOrder(' + i + ')">Received</button> ') + '<button class="btn-danger" onclick="delOrder(' + i + ')">Delete</button></td></tr>').join('')
       : '<tr><td colspan="6" style="color:#6b7280;">No saved orders.</td></tr>';
+  }
+  function bootRoadmap() {
+    let req = [];
+    try { req = JSON.parse(localStorage.getItem('nancy_requests')) || []; } catch {}
+    document.querySelectorAll('[data-req]').forEach(el => {
+      const i = +el.getAttribute('data-req');
+      if (req.includes(i)) { el.textContent = 'requested ✓'; el.style.background = '#dcfce7'; el.style.color = '#166534'; }
+    });
+  }
+  function requestBuild(i, name) {
+    let req = [];
+    try { req = JSON.parse(localStorage.getItem('nancy_requests')) || []; } catch {}
+    if (!req.includes(i)) req.push(i);
+    try { localStorage.setItem('nancy_requests', JSON.stringify(req)); } catch {}
+    bootRoadmap();
+    toast('Noted! "' + name + '" queued for building.');
   }
   function bootWaste() {
     document.getElementById('wasteDate').value = new Date().toISOString().slice(0, 10);
@@ -2225,6 +2513,8 @@
       a.download = 'nancy-backup-' + new Date().toISOString().slice(0, 10) + '.json';
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      try { localStorage.setItem('nancy_lastbackup', String(Date.now())); } catch {}
+      renderAudit();
       toast('Backup downloaded.');
     } catch (e) { alert('Backup failed: ' + e.message); }
   }
@@ -2259,6 +2549,7 @@
       if (v !== '') ov[row.getAttribute('data-id')] = +v;
     });
     try { localStorage.setItem(PRICE_KEY, JSON.stringify(ov)); } catch {}
+    audit('Saved prices for ' + Object.keys(ov).length + ' items.');
     toast('Prices saved for ' + Object.keys(ov).length + ' items.');
   }
   function saleAutofill() {
@@ -2394,6 +2685,200 @@
     box.innerHTML = 'Bulk scan done: ' + total + ' sheet(s) → full table below with mistake check.';
     document.getElementById('docBox').scrollIntoView();
   }
+  var countMap = {};
+  function latestClosing() {
+    const src = reportSource();
+    const keys = Object.keys(src).sort().filter(k => k.indexOf('demo-') !== 0);
+    if (!keys.length) return {};
+    return src[keys[keys.length - 1]].closing || {};
+  }
+  function bootStocktake() {
+    document.getElementById('countDate').value = new Date().toISOString().slice(0, 10);
+    renderCount();
+  }
+  function renderCount() {
+    const q = (document.getElementById('countSearch').value || '').toLowerCase();
+    const exp = latestClosing();
+    const list = allDrinks.filter(d => !q || d.name.toLowerCase().includes(q)).slice(0, 120);
+    document.getElementById('countInfo').textContent = list.length + ' items shown';
+    document.getElementById('countRows').innerHTML = list.map(d => {
+      const c = countMap[d.id] ?? '';
+      const e = exp[d.id];
+      const v = (c === '' || e === undefined) ? '' : (+c - +e);
+      return '<tr><td>' + d.name + '</td><td>' + (e ?? '-') + '</td>' +
+        '<td><button class="btn-danger" onclick="stepCount(' + d.id + ',-1)">−</button> ' +
+        '<input data-count="' + d.id + '" type="number" min="0" value="' + c + '" oninput="editCount(' + d.id + ',this.value)" style="width:70px;" /> ' +
+        '<button class="btn-green" style="margin-top:0;padding:6px 12px;" onclick="stepCount(' + d.id + ',1)">+</button></td>' +
+        '<td><b style="color:' + (v === '' ? 'inherit' : v === 0 ? '#16a34a' : '#b91c1c') + ';">' + v + '</b></td></tr>';
+    }).join('');
+    const n = Object.keys(countMap).length;
+    document.getElementById('countTotal').textContent = n ? n + ' items counted' : '';
+  }
+  function editCount(id, v) { countMap[id] = v; renderCount(); }
+  function stepCount(id, d) {
+    const cur = parseInt(countMap[id] || '0', 10) || 0;
+    countMap[id] = Math.max(0, cur + d);
+    renderCount();
+  }
+  function applyCount() {
+    const ids = Object.keys(countMap).filter(k => countMap[k] !== '');
+    if (!ids.length) { alert('Count something first.'); return; }
+    const date = document.getElementById('countDate').value || new Date().toISOString().slice(0, 10);
+    if (!confirm('Apply ' + ids.length + ' counted closings to ' + date + '?')) return;
+    const days = loadDays();
+    if (!days[date]) days[date] = { opening: {}, closing: {} };
+    ids.forEach(id => { days[date].closing[id] = +countMap[id]; });
+    storeDays(days);
+    countMap = {};
+    renderCount();
+    updateStats();
+    toast('Stocktake applied to ' + date + '.');
+  }
+  var camStream = null, camTimer = null, lastCode = '';
+  function loadCodes() { try { return JSON.parse(localStorage.getItem('nancy_barcodes')) || {}; } catch { return {}; } }
+  async function startCam() {
+    const v = document.getElementById('camView');
+    const out = document.getElementById('scanOut');
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { out.innerHTML = 'Camera not available in this browser.'; return; }
+    if (typeof BarcodeDetector === 'undefined') { out.innerHTML = 'Barcode live-scan needs Chrome/Edge. Type the code instead: <input id="manualCode" style="width:160px;padding:8px;border:1.5px solid #e5e7eb;border-radius:8px;" /> <button class="btn-small" onclick="manualCodeGo()">Go</button>'; return; }
+    try {
+      camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      v.srcObject = camStream;
+      v.style.display = '';
+      await v.play();
+      out.innerHTML = 'Point at a barcode...';
+      const det = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'qr_code'] });
+      const tick = async () => {
+        if (!camStream) return;
+        try {
+          const codes = await det.detect(v);
+          if (codes.length) { gotCode(codes[0].rawValue); return; }
+        } catch {}
+        camTimer = setTimeout(tick, 400);
+      };
+      tick();
+    } catch (e) { out.innerHTML = 'Camera blocked: ' + e.message + '. Allow camera permission and retry.'; }
+  }
+  function stopCam() {
+    if (camStream) camStream.getTracks().forEach(t => t.stop());
+    camStream = null;
+    clearTimeout(camTimer);
+    document.getElementById('camView').style.display = 'none';
+    document.getElementById('scanOut').innerHTML = '';
+  }
+  function manualCodeGo() {
+    const v = document.getElementById('manualCode').value.trim();
+    if (v) gotCode(v);
+  }
+  function gotCode(code) {
+    stopCam();
+    lastCode = code;
+    document.getElementById('codeVal').textContent = code;
+    document.getElementById('codeBox').style.display = '';
+    const map = loadCodes();
+    const id = map[code];
+    const d = id !== undefined ? allDrinks.find(x => String(x.id) === String(id)) : null;
+    document.getElementById('codeKnown').innerHTML = d
+      ? 'Mapped to <b>' + d.name + '</b> (price ' + (d.price ?? '-') + ')'
+      : 'Unknown code — assign it to a drink below (one time).';
+    document.getElementById('scanOut').innerHTML = 'Scanned: <b>' + code + '</b>';
+    document.getElementById('codeBox').scrollIntoView();
+  }
+  function assignCode() {
+    const q = document.getElementById('codeItem').value.trim().toLowerCase();
+    const d = allDrinks.find(x => x.name.toLowerCase() === q);
+    if (!d) { alert('Pick a drink from the list.'); return; }
+    const map = loadCodes();
+    map[lastCode] = d.id;
+    try { localStorage.setItem('nancy_barcodes', JSON.stringify(map)); } catch {}
+    gotCodeRefresh();
+    toast('Mapped to ' + d.name + '.');
+  }
+  function gotCodeRefresh() {
+    const map = loadCodes();
+    const id = map[lastCode];
+    const d = id !== undefined ? allDrinks.find(x => String(x.id) === String(id)) : null;
+    document.getElementById('codeKnown').innerHTML = d ? 'Mapped to <b>' + d.name + '</b>' : 'Unknown code.';
+  }
+  function codeCount() {
+    const map = loadCodes();
+    const id = map[lastCode];
+    if (id === undefined) { alert('Assign this code first.'); return; }
+    countMap[id] = (parseInt(countMap[id] || '0', 10) || 0) + 1;
+    toast('Counted +1. Total for item: ' + countMap[id] + '. Apply in Stocktake.');
+  }
+  function codeSell() {
+    const map = loadCodes();
+    const id = map[lastCode];
+    const d = id !== undefined ? allDrinks.find(x => String(x.id) === String(id)) : null;
+    if (!d) { alert('Assign this code first.'); return; }
+    const all = loadSales();
+    const k = todayKey();
+    if (!all[k]) all[k] = [];
+    const now = new Date();
+    all[k].push({ item: d.name, qty: 1, price: +d.price || 0, amount: +d.price || 0, time: String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') });
+    try { localStorage.setItem(SALE_KEY, JSON.stringify(all)); } catch {}
+    renderSales();
+    updateStats();
+    toast('Sale recorded: ' + d.name + '.');
+  }
+  function myRole() {
+    try { return sessionStorage.getItem('nancy_role') || 'admin'; } catch { return 'admin'; }
+  }
+  const CASHIER_OK = ['dashboard', 'drinks', 'sales', 'upload', 'scan', 'formulas'];
+  const _showSection = showSection;
+  showSection = function(id, skipHash) {
+    if (myRole() === 'cashier' && !CASHIER_OK.includes(id)) {
+      toast('Managers only. Signed in as cashier.');
+      return;
+    }
+    _showSection(id, skipHash);
+  };
+  function audit(action) {
+    try {
+      const log = JSON.parse(localStorage.getItem('nancy_audit') || '[]');
+      let user = '';
+      try { user = sessionStorage.getItem('nancy_user') || localStorage.getItem('nancy_user') || ''; } catch {}
+      log.push({ t: new Date().toLocaleString(), user, action });
+      localStorage.setItem('nancy_audit', JSON.stringify(log.slice(-200)));
+    } catch {}
+  }
+  function renderAudit() {
+    let log = [];
+    try { log = JSON.parse(localStorage.getItem('nancy_audit')) || []; } catch {}
+    const box = document.getElementById('auditRows');
+    if (!box) return;
+    box.innerHTML = log.length
+      ? log.slice().reverse().slice(0, 60).map(e => '<tr><td>' + e.t + '</td><td>' + (e.user || '-') + '</td><td>' + e.action + '</td></tr>').join('')
+      : '<tr><td colspan="3" style="color:#6b7280;">No audit entries yet.</td></tr>';
+  }
+  function clearAudit() {
+    if (!confirm('Clear the audit trail?')) return;
+    try { localStorage.removeItem('nancy_audit'); } catch {}
+    renderAudit();
+  }
+  function backupReminder() {
+    let last = null;
+    try { last = localStorage.getItem('nancy_lastbackup'); } catch {}
+    const box = document.getElementById('backupNote');
+    if (!box) return;
+    if (!last) { box.innerHTML = '<b style="color:#b45309;">No backup yet — download one below.</b>'; return; }
+    const days = Math.round((Date.now() - +last) / 86400000);
+    box.innerHTML = days >= 7
+      ? '<b style="color:#b91c1c;">Last backup ' + days + ' days ago — back up now.</b>'
+      : '<span style="color:#16a34a;">Backed up ' + days + ' day(s) ago.</span>';
+    if (days >= 7) toast('Weekly backup due — open Settings.');
+  }
+  function shareToday() {
+    const k = new Date().toISOString().slice(0, 10);
+    const sales = (loadSales()[k] || []).reduce((a, s) => a + (+s.amount || 0), 0);
+    const exps = loadExpenses().filter(e => (e.date || '').indexOf(k) === 0).reduce((a, e) => a + (+e.amount || 0), 0);
+    const cash = loadCash()[k];
+    const text = "Nancy's System — " + k + '\nSales: ' + sales + '\nExpenses: ' + exps + '\nProfit: ' + (sales - exps) +
+      (cash ? '\nCash count: ' + cash.cash + ' + Mpesa ' + cash.mpesa + ' vs expected ' + cash.expected : '\nCash: not counted');
+    if (navigator.share) { navigator.share({ title: "Nancy daily summary", text }).catch(() => {}); }
+    else { window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank'); }
+  }
   function settingsInit() {
     try {
       const admin = JSON.parse(localStorage.getItem(ADMIN_KEY));
@@ -2405,6 +2890,17 @@
       }
     } catch {}
     renderStaff();
+    renderAudit();
+    backupReminder();
+  }
+  if (allDrinks.length > 0) { safeBoot(); }
+  else if (typeof fetch !== 'undefined') {
+    fetch('drinks.json').then(r => r.json()).then(data => { allDrinks = data; safeBoot(); }).catch(() => {
+      document.getElementById('drinkRows').innerHTML = '<tr><td colspan="9">Could not load drinks database</td></tr>';
+      document.getElementById('drinkTotal').textContent = 'Database not loaded';
+    });
+  } else {
+    document.getElementById('drinkRows').innerHTML = '<tr><td colspan="9">Could not load drinks database</td></tr>';
   }
 </script>
 <script>
