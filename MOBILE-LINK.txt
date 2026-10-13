@@ -2,11 +2,12 @@ NANCY WORK SYSTEM — MOBILE DOWNLOAD LINK
 ==========================================
 Open this link on your mobile phone:
 
-  https://cruel-pigs-learn.loca.lt
+  https://ef304a989d1b99be-102-212-238-129.serveousercontent.com
 
 Or scan mobile-link-qr.png with your phone camera.
 
-Then in Chrome tap menu (⋮) > "Install app" (or "Add to Home screen").
+Tap Continue to Site on the warning page (it is your own computer),
+then in Chrome tap menu (⋮) > "Install app" (or "Add to Home screen").
 The app installs with the Nancy logo and works offline afterwards.
 
 IMPORTANT: keep this PC on with internet while installing —

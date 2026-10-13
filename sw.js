@@ -1,4 +1,4 @@
-const CACHE = 'nancy-system-v9';
+const CACHE = 'nancy-system-v11';
 const FILES = [
   './', 'index.html', 'nancy.html', 'app.html', 'system.html', 'reports.html', 'ai.html',
   'upload.html', 'scanned-data.html', 'formulas.html', 'settings.html',

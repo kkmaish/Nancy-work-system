@@ -326,6 +326,14 @@
     <div class="sec-head"><div class="sec-icon">🤖</div><div><h1 class="page-title">AI Predictor</h1>
     <p class="page-sub">Future closings, change detection, mistakes and solutions.</p></div></div>
     <div class="db-box">
+      <div class="db-head"><div><h2>Ask AI</h2><span style="color:#6b7280;font-size:13px;">answers from your own data</span></div></div>
+      <div style="padding:18px 20px;">
+        <div id="aiChat" style="max-height:300px;overflow:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
+        <div class="report-row"><input id="aiQ" type="text" placeholder="e.g. what runs out this week?" style="flex:1;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;" onkeydown="if(event.key==='Enter')askAI()" /><button class="btn-small" onclick="askAI()">Ask</button></div>
+        <div class="hint">Try: what runs out · why did tusker drop · predict heineken · reorder list · cash today · profit today · mistakes · help.</div>
+      </div>
+    </div>
+    <div class="db-box">
       <div class="db-head">
         <div><h2>Closing Forecast</h2><span id="aiCount"></span></div>
         <button class="btn-small" onclick="runAI()">Run AI prediction</button>
@@ -336,7 +344,8 @@
           <div class="report-card"><h3>Detected changes & mistakes</h3><div id="aiAlerts" style="font-size:13px;max-height:260px;overflow:auto;">Click Run AI prediction.</div></div>
         </div>
         <div class="report-card" style="margin-top:16px;"><h3>Solutions & actions</h3><div id="aiSolutions" style="font-size:13px;"></div></div>
-        <div class="report-card" style="margin-top:16px;"><h3>Prediction table</h3><div style="overflow:auto;"><table style="min-width:600px;"><thead><tr><th>Item</th><th>Last</th><th>Avg(3)</th><th>Predicted</th><th>Recommend open</th></tr></thead><tbody id="aiRows"></tbody></table></div></div>
+        <div class="report-card" style="margin-top:16px;"><h3>Prediction table</h3><div style="overflow:auto;"><table style="min-width:600px;"><div id="aiSummary" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;"></div>
+            <thead><tr><th>Item</th><th>Last</th><th>Avg(3)</th><th>Trend</th><th>Predicted</th><th>Confidence</th><th>Risk</th><th>Recommend open</th></tr></thead><tbody id="aiRows"></tbody></table></div></div>
       </div>
     </div>
     <div class="db-box">
@@ -1437,7 +1446,12 @@
       let pred = Math.max(0, Math.round(avg + trend * 0.5));
       const last = h[h.length - 1].close;
       const recOpen = Math.max(pred + Math.ceil(avg * 0.3), pred + 5);
-      preds.push({ id: d.id, name: d.name, last, avg: Math.round(avg), pred, recOpen });
+      const mean = avg || 1;
+      const variance = last3.reduce((a, b) => a + (b - avg) * (b - avg), 0) / last3.length;
+      const cv = Math.sqrt(variance) / mean;
+      const conf = Math.max(5, Math.min(97, Math.round(90 - cv * 100 - (h.length < 5 ? (5 - h.length) * 8 : 0))));
+      const risk = pred <= 2 ? 'high' : pred <= 5 ? 'medium' : 'low';
+      preds.push({ id: d.id, name: d.name, last, avg: Math.round(avg), pred, recOpen, trend, conf, risk });
       if (avg > 0 && Math.abs(last - avg) / avg > 0.5)
         alerts.push('⚠️ <b>' + d.name + '</b>: sudden ' + (last > avg ? 'jump' : 'drop') + ' — last ' + last + ' vs avg ' + Math.round(avg) + ' on ' + h[h.length - 1].day);
       if (last === 0) alerts.push('⛔ <b>' + d.name + '</b>: closing is ZERO (stockout) on ' + h[h.length - 1].day);
@@ -1449,8 +1463,16 @@
       if (pred <= 5) solutions.push('🛒 Reorder <b>' + d.name + '</b> — predicted closing ' + pred + '. Recommended opening: ' + recOpen);
     });
     const top = preds.slice(0, 15);
+    const pill = t => t === 'high' ? '<span class="pill bad">HIGH</span>' : t === 'medium' ? '<span class="pill warn">MED</span>' : '<span class="pill ok">LOW</span>';
+    const tArrow = t => t > 0.5 ? '▲ rising' : t < -0.5 ? '▼ falling' : '● stable';
     document.getElementById('aiRows').innerHTML = top.map(p =>
-      '<tr><td>' + p.name + '</td><td>' + p.last + '</td><td>' + p.avg + '</td><td><b>' + p.pred + '</b></td><td>' + p.recOpen + '</td></tr>').join('');
+      '<tr><td>' + p.name + '</td><td>' + p.last + '</td><td>' + p.avg + '</td><td>' + tArrow(p.trend) + '</td><td><b>' + p.pred + '</b></td><td>' + p.conf + '%</td><td>' + pill(p.risk) + '</td><td>' + p.recOpen + '</td></tr>').join('');
+    const hi = preds.filter(p => p.risk === 'high').length;
+    const md = preds.filter(p => p.risk === 'medium').length;
+    document.getElementById('aiSummary').innerHTML =
+      '<span class="pill bad">' + hi + ' high stockout risk</span>' +
+      '<span class="pill warn">' + md + ' medium risk</span>' +
+      '<span class="pill ok">' + (preds.length - hi - md) + ' safe</span>';
     document.getElementById('aiAlerts').innerHTML = alerts.length ? alerts.slice(0, 40).join('<br>') : 'No major changes or mistakes detected.';
     const uniqSol = [...new Set(solutions)];
     document.getElementById('aiSolutions').innerHTML =
@@ -1464,6 +1486,89 @@
       chP = new Chart(document.getElementById('chPredict'), { type: 'bar',
         data: { labels: top.map(p => p.name), datasets: [{ label: 'Predicted closing', data: top.map(p => p.pred), backgroundColor: '#065f46' }] }, options: { responsive: true } });
     }
+  }
+  function aiSay(who, html) {
+    const box = document.getElementById('aiChat');
+    const d = document.createElement('div');
+    d.style.cssText = who === 'you'
+      ? 'align-self:flex-end;background:linear-gradient(120deg,#047857,#d97706);color:#fff;padding:8px 12px;border-radius:12px 12px 2px 12px;max-width:85%;font-size:13px;'
+      : 'align-self:flex-start;background:#f5f3ff;border:1px solid #ddd6fe;padding:8px 12px;border-radius:12px 12px 12px 2px;max-width:90%;font-size:13px;';
+    d.innerHTML = html;
+    box.appendChild(d);
+    box.scrollTop = box.scrollHeight;
+  }
+  function aiForecast(id) {
+    const days = loadDays();
+    const keys = Object.keys(days).sort().filter(k => k.indexOf('demo-') !== 0);
+    const vals = keys.map(k => +(((days[k] || {}).closing || {})[id] ?? NaN)).filter(v => !isNaN(v));
+    if (vals.length < 2) return null;
+    const last3 = vals.slice(-3);
+    const avg = last3.reduce((a, b) => a + b, 0) / last3.length;
+    const trend = (vals[vals.length - 1] - vals[0]) / vals.length;
+    return { pred: Math.max(0, Math.round(avg + trend * 0.5)), avg: Math.round(avg), last: vals[vals.length - 1], trend };
+  }
+  function askAI() {
+    const inp = document.getElementById('aiQ');
+    const q = inp.value.trim();
+    if (!q) return;
+    inp.value = '';
+    aiSay('you', q.replace(/</g, '&lt;'));
+    const s = q.toLowerCase();
+    const findItem = () => allDrinks.find(d => s.includes(d.name.toLowerCase()));
+    const days = loadDays();
+    const keys = Object.keys(days).sort().filter(k => k.indexOf('demo-') !== 0);
+    if (/help|what can you|commands/.test(s))
+      return aiSay('ai', 'Ask me: <b>what runs out</b> - <b>why did [drink] drop</b> - <b>predict [drink]</b> - <b>reorder list</b> - <b>cash today</b> - <b>profit today</b> - <b>mistakes</b>.');
+    if (/runs? out|run.?out|stock.?out|finish|deplet/.test(s)) {
+      const outs = [];
+      allDrinks.slice(0, 80).forEach(d => {
+        const f = aiForecast(d.id);
+        if (f && f.pred <= 5) outs.push({ d, f });
+      });
+      if (!outs.length) return aiSay('ai', keys.length < 2 ? 'Save at least 2 days first, then I can predict.' : 'Nothing critical — no item predicted at 5 or below.');
+      outs.sort((a, b) => a.f.pred - b.f.pred);
+      return aiSay('ai', '<b>Running out soon:</b><br>' + outs.slice(0, 12).map(o => o.d.name + ' → predicted <b>' + o.f.pred + '</b> (last ' + o.f.last + ')').join('<br>'));
+    }
+    if (/reorder/.test(s)) {
+      const src = reportSource();
+      if (!keys.length) return aiSay('ai', 'No saved days yet.');
+      const last = src[keys[keys.length - 1]].closing || {};
+      const low = allDrinks.filter(d => last[d.id] !== undefined && +last[d.id] <= 5).slice(0, 15);
+      return aiSay('ai', low.length ? '<b>Reorder now:</b><br>' + low.map(d => d.name + ' (' + last[d.id] + ' left)').join('<br>') : 'Stock levels look healthy.');
+    }
+    const item = findItem();
+    if (item && /predict|forecast|tomorrow|next/.test(s)) {
+      const f = aiForecast(item.id);
+      if (!f) return aiSay('ai', 'Not enough history for <b>' + item.name + '</b> yet.');
+      return aiSay('ai', '<b>' + item.name + '</b>: last ' + f.last + ', avg ' + f.avg + ' → predicted closing <b>' + f.pred + '</b> (trend ' + (f.trend > 0.5 ? '▲ rising' : f.trend < -0.5 ? '▼ falling' : '● stable') + ').');
+    }
+    if (item && /why|drop|fall|down|spike|jump|up|change/.test(s)) {
+      const vals = keys.map(k => ({ k, v: +(((days[k] || {}).closing || {})[item.id] ?? NaN) })).filter(x => !isNaN(x.v));
+      if (vals.length < 2) return aiSay('ai', 'Not enough history for <b>' + item.name + '</b>.');
+      const a = vals[vals.length - 2], b = vals[vals.length - 1];
+      const diff = b.v - a.v;
+      return aiSay('ai', '<b>' + item.name + '</b> moved ' + a.v + ' → <b>' + b.v + '</b> (' + (diff >= 0 ? '+' : '') + diff + ') between ' + a.k + ' and ' + b.k + '. ' + (diff < 0 ? 'Likely heavy sales — verify against the sales log and till.' : diff > 0 ? 'Stock grew — likely a restock or a count correction.' : 'No movement — dead stock or unsold day.'));
+    }
+    if (/cash/.test(s)) {
+      const k = new Date().toISOString().slice(0, 10);
+      const cash = loadCash()[k];
+      if (!cash) return aiSay('ai', 'No cash count saved for today yet. Open Cash and count.');
+      const d = cash.cash + cash.mpesa - cash.expected;
+      return aiSay('ai', 'Today: expected <b>' + cash.expected + '</b>, counted cash ' + cash.cash + ' + Mpesa ' + cash.mpesa + ' = <b>' + (d >= 0 ? '+' : '') + d + '</b>.');
+    }
+    if (/profit/.test(s)) {
+      const k = new Date().toISOString().slice(0, 10);
+      const rev = (loadSales()[k] || []).reduce((a, x) => a + (+x.amount || 0), 0);
+      const ex = loadExpenses().filter(e => (e.date || '').indexOf(k) === 0).reduce((a, e) => a + (+e.amount || 0), 0);
+      return aiSay('ai', 'Today: sales <b>' + rev + '</b> − expenses ' + ex + ' = profit <b>' + (rev - ex) + '</b>.');
+    }
+    if (/mistake|error|wrong|problem/.test(s)) {
+      const docs = loadDocs();
+      let n = 0;
+      docs.forEach(doc => (doc.rows || []).forEach(r => { n += rowErrors(r).length; }));
+      return aiSay('ai', n ? 'Found <b>' + n + '</b> formula mistake(s) across scanned documents. Open Scanned Data → AI check all to review and rectify.' : 'No formula mistakes in scanned documents. For daily anomalies, press Run AI prediction below.');
+    }
+    return aiSay('ai', 'I can answer about stockouts, drinks, cash, profit and mistakes. Type <b>help</b> for examples.');
   }
   function isNumAI(v) { return v !== '' && v !== undefined && v !== null && !isNaN(parseFloat(v)); }
   function checkScannedDocs() {
