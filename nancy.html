@@ -53,6 +53,10 @@
   .tabs { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; flex: 1; overflow-y: auto; }
   .tabs button { background: rgba(255,255,255,.07); border: 1px solid transparent; color: #fdf6e3; font-weight: 700; font-size: 14.5px; padding: 12px 15px; cursor: pointer; border-radius: 14px; transition: .18s; text-align: left; display: flex; align-items: center; gap: 10px; }
   .tabs button:hover { background: rgba(251,191,36,.22); transform: translateX(4px); color: #fff; }
+  .grp { width: 100%; background: rgba(251,191,36,.14); border: 1px solid rgba(251,191,36,.35); color: #fde68a; font-weight: 800; font-size: 12.5px; letter-spacing: 1px; text-transform: uppercase; padding: 9px 12px; cursor: pointer; border-radius: 10px; text-align: left; margin-top: 6px; }
+  .grp:hover { background: rgba(251,191,36,.28); }
+  .grp-body { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+  .grp-body.closed { display: none; }
   .tabs button.active { background: linear-gradient(120deg, #fbbf24, #f59e0b); color: #064e3b; box-shadow: 0 6px 16px rgba(0,0,0,.3); }
   main { padding: 26px; max-width: 1200px; margin: auto; width: 100%; }
   .page-title { font-size: 30px; color: var(--deep); }
@@ -108,7 +112,7 @@
   #view-sales .card, #view-sales .db-box { border-top: 6px solid #65a30d; }
   #view-expenses .card, #view-expenses .db-box { border-top: 6px solid #e11d48; }
   #view-reports .db-box { border-top: 6px solid #7c3aed; }
-  #view-ai .db-box { border-top: 6px solid #db2777; }
+  #view-aichat .db-box { border-top: 6px solid #db2777; }
   #view-upload .db-box { border-top: 6px solid #0891b2; }
   #view-scanned .db-box { border-top: 6px solid #b45309; }
   #view-formulas .card { border-left-color: #d97706; background: linear-gradient(180deg, #fffbeb, #ffffff); }
@@ -155,25 +159,39 @@
 <aside class="sidebar">
   <div class="brand"><img src="logo.png" alt="Logo" /><h1>NANCY'S <span>SYSTEM</span><small>precious · strong · advanced</small></h1></div>
   <div class="tabs" id="tabs">
-    <button data-sec="dashboard" class="active" onclick="showSection('dashboard')">📊 Dashboard</button>
+    <button class="grp" onclick="toggleGrp('g-daily')">📅 Daily</button>
+    <div class="grp-body" id="g-daily">
+    <button data-sec="dashboard" onclick="showSection('dashboard')" class="active">📊 Dashboard</button>
     <button data-sec="drinks" onclick="showSection('drinks')">🥤 Drinks</button>
     <button data-sec="sales" onclick="showSection('sales')">🧾 Sales</button>
     <button data-sec="expenses" onclick="showSection('expenses')">💸 Expenses</button>
+    <button data-sec="cash" onclick="showSection('cash')">💰 Cash</button>
+    </div>
+    <button class="grp" onclick="toggleGrp('g-smart')">🧠 Intelligence</button>
+    <div class="grp-body" id="g-smart">
     <button data-sec="reports" onclick="showSection('reports')">📝 Reports</button>
-    <button data-sec="ai" onclick="showSection('ai')">🤖 AI Predictor</button>
-    <button data-sec="aichat" onclick="showSection('ai');setTimeout(()=>{const el=document.getElementById('askBox');if(el)el.scrollIntoView({block:'start'});},80);return false;">💬 AI Chat</button>
+    <button data-sec="aichat" onclick="showSection('aichat')">💬 AI Chat</button>
+    </div>
+    <button class="grp" onclick="toggleGrp('g-docs')">📁 Documents</button>
+    <div class="grp-body" id="g-docs">
     <button data-sec="upload" onclick="showSection('upload')">📤 Upload & Scan</button>
     <button data-sec="scan" onclick="showSection('upload');setTimeout(()=>{const el=document.getElementById('checkBox');if(el)el.scrollIntoView({block:'start'});},80);return false;">🔍 Scan</button>
     <button data-sec="scanned" onclick="showSection('scanned')">📑 Scanned Data</button>
     <button data-sec="formulas" onclick="showSection('formulas')">🧮 Formulas</button>
-    <button data-sec="cash" onclick="showSection('cash')">💰 Cash</button>
+    </div>
+    <button class="grp" onclick="toggleGrp('g-biz')">💼 Business</button>
+    <div class="grp-body" id="g-biz">
     <button data-sec="debts" onclick="showSection('debts')">📒 Debts</button>
     <button data-sec="orders" onclick="showSection('orders')">📦 Orders</button>
     <button data-sec="wastage" onclick="showSection('wastage')">🧾 Wastage</button>
     <button data-sec="stocktake" onclick="showSection('stocktake')">⚡ Stocktake</button>
     <button data-sec="scan" onclick="showSection('scan')">📷 Barcode</button>
+    </div>
+    <button class="grp" onclick="toggleGrp('g-sys')">🛠️ System</button>
+    <div class="grp-body" id="g-sys">
     <button data-sec="roadmap" onclick="showSection('roadmap')">🌟 Roadmap</button>
     <button data-sec="settings" onclick="showSection('settings')">⚙️ Settings</button>
+    </div>
     <a class="side-logout" href="index.html" style="color:#fde68a;font-weight:700;font-size:14px;padding:12px 8px;text-decoration:none;">⏻ Logout</a>
   </div>
 </aside>
@@ -216,7 +234,7 @@
       <div class="report-row">
         <button class="btn-small" onclick="showSection('drinks')">Open stock sheet</button>
         <button class="btn-small" onclick="showSection('reports')">Weekly / monthly PDF</button>
-        <button class="btn-small" onclick="showSection('ai')">Run AI predictor</button>
+        <button class="btn-small" onclick="showSection('aichat')">Ask AI</button>
         <button class="btn-small" onclick="showSection('upload')">Upload a sheet</button>
             <button class="btn-small" onclick="shareToday()">Share today</button>
       </div>
@@ -248,6 +266,10 @@
     <div class="sec-head"><div class="sec-icon green">🧾</div><div><h1 class="page-title">Daily Sales</h1>
     <p class="page-sub">Record every sale as it happens. Today total: <b id="salesTotal">0</b></p></div></div>
     <div class="card form-card">
+      <h3>⚡ Quick sale (rush hour)</h3>
+      <div id="quickSale" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+    </div>
+    <div class="card form-card">
       <h3>New sale</h3>
       <div class="row2">
         <div><label>Item</label><input id="saleItem" list="drinkNames" type="text" placeholder="Type item name..." oninput="saleAutofill()" /></div>
@@ -257,12 +279,23 @@
         <div><label>Price each</label><input id="salePrice" type="number" min="0" oninput="saleAutofill()" /></div>
         <div><label>Amount</label><input id="saleAmount" type="number" readonly style="background:#f5f5f4;" /></div>
       </div>
+      <div class="row2">
+        <div><label>Payment</label><select id="salePay"><option value="cash">Cash</option><option value="mpesa">Mpesa</option><option value="credit">Credit (debt)</option><option value="comp">Complimentary</option></select></div>
+        <div><label>Buying cost each (for profit)</label><input id="saleCost" type="number" min="0" /></div>
+      </div>
+      <label>Customer (credit) / reason (comp or void)</label>
+      <input id="saleNote" type="text" placeholder="Name for credit, reason for comp..." />
       <button class="btn-small" onclick="addSale()">Record sale</button>
     </div>
     <div class="card">
-      <h3>Today's sales</h3>
-      <div style="overflow:auto;"><table style="min-width:0;"><thead><tr><th>Time</th><th>Item</th><th>Qty</th><th>Amount</th><th>Action</th></tr></thead><tbody id="salesRows"></tbody></table></div>
+      <h3>Today's sales <span id="paySplit" style="font-size:12px;color:#6b7280;"></span></h3>
+      <div style="overflow:auto;"><table style="min-width:0;"><thead><tr><th>Time</th><th>Item</th><th>Qty</th><th>Pay</th><th>Amount</th><th>Action</th></tr></thead><tbody id="salesRows"></tbody></table></div>
     </div>
+    <div class="report-grid">
+      <div class="report-card"><h3>Daily target</h3><div class="row2"><div><label>Target amount</label><input id="salesTarget" type="number" min="0" onchange="saveTarget()" /></div><div><label>Progress</label><div class="meter"><div id="targetMeter"></div></div><div id="targetText" style="font-size:13px;font-weight:700;"></div></div></div></div>
+      <div class="report-card"><h3>Sales by hour (today)</h3><canvas id="chHours" height="160"></canvas></div>
+    </div>
+    <div class="card"><h3>Per-item profit today</h3><div style="overflow:auto;"><table style="min-width:0;"><thead><tr><th>Item</th><th>Qty</th><th>Revenue</th><th>Cost</th><th>Profit</th></tr></thead><tbody id="profitRows"></tbody></table></div></div>
   </div>
   <div class="view" id="view-expenses" style="display:none;">
     <div class="sec-head"><div class="sec-icon rose">💸</div><div><h1 class="page-title">Expenses</h1>
@@ -340,39 +373,15 @@
       </div>
     </div>
   </div>
-  <div class="view" id="view-ai" style="display:none;">
-    <div class="sec-head"><div class="sec-icon">🤖</div><div><h1 class="page-title">AI Predictor</h1>
-    <p class="page-sub">Future closings, change detection, mistakes and solutions.</p></div></div>
+  <div class="view" id="view-aichat" style="display:none;">
+    <div class="sec-head"><div class="sec-icon">💬</div><div><h1 class="page-title">AI Chat</h1>
+    <p class="page-sub">Ask questions, get answers from your own data.</p></div></div>
     <div class="db-box">
       <div class="db-head"><div id="askBox"><div><h2>Ask AI</h2><span style="color:#6b7280;font-size:13px;">answers from your own data</span></div></div></div>
       <div style="padding:18px 20px;">
         <div id="aiChat" style="max-height:300px;overflow:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
         <div class="report-row"><input id="aiQ" type="text" placeholder="e.g. what runs out this week?" style="flex:1;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;" onkeydown="if(event.key==='Enter')askAI()" /><button class="btn-small" onclick="askAI()">Ask</button></div>
         <div class="hint">Try: what runs out · why did tusker drop · predict heineken · reorder list · cash today · profit today · mistakes · help.</div>
-      </div>
-    </div>
-    <div class="db-box">
-      <div class="db-head">
-        <div><h2>Closing Forecast</h2><span id="aiCount"></span></div>
-        <button class="btn-small" onclick="runAI()">Run AI prediction</button>
-      </div>
-      <div style="padding:18px 20px;">
-        <div class="report-grid">
-          <div class="report-card"><h3>Predicted next-day closing (top 15)</h3><canvas id="chPredict" height="220"></canvas></div>
-          <div class="report-card"><h3>Detected changes & mistakes</h3><div id="aiAlerts" style="font-size:13px;max-height:260px;overflow:auto;">Click Run AI prediction.</div></div>
-        </div>
-        <div class="report-card" style="margin-top:16px;"><h3>Solutions & actions</h3><div id="aiSolutions" style="font-size:13px;"></div></div>
-        <div class="report-card" style="margin-top:16px;"><h3>Prediction table</h3><div style="overflow:auto;"><table style="min-width:600px;"><div id="aiSummary" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;"></div>
-            <thead><tr><th>Item</th><th>Last</th><th>Avg(3)</th><th>Trend</th><th>Predicted</th><th>Confidence</th><th>Risk</th><th>Recommend open</th></tr></thead><tbody id="aiRows"></tbody></table></div></div>
-      </div>
-    </div>
-    <div class="db-box">
-      <div class="db-head">
-        <div><h2>Scanned Document Error Check</h2><span id="scanCheckCount" style="color:#6b7280;font-size:13px;"></span></div>
-        <button class="btn-small" onclick="checkScannedDocs()">Check scanned documents</button>
-      </div>
-      <div style="padding:18px 20px;">
-        <div id="scanCheckResult" style="font-size:13px;">Checks every scanned document's formulas and verifies rectified versions were corrected rightly.</div>
       </div>
     </div>
   </div>
@@ -1557,66 +1566,6 @@
     document.getElementById('view-reports').style.display = '';
     window.print();
   }
-  function historyFor(id) {
-    const days = loadDays();
-    return Object.keys(days).sort().map(k => ({ day: k, open: +((days[k].opening || {})[id] ?? NaN), close: +((days[k].closing || {})[id] ?? NaN) }));
-  }
-  var chP = null;
-  function runAI() {
-    const days = loadDays();
-    const keys = Object.keys(days).sort().filter(k => k.indexOf('demo-') !== 0);
-    if (keys.length < 2) { document.getElementById('aiAlerts').innerHTML = 'Need at least 2 real saved days (demo days excluded). Save days in Drinks first.'; return; }
-    const preds = [], alerts = [], solutions = [];
-    allDrinks.slice(0, 60).forEach(d => {
-      const h = historyFor(d.id).filter(x => !isNaN(x.close));
-      if (h.length < 2) return;
-      const last3 = h.slice(-3).map(x => x.close);
-      const avg = last3.reduce((a, b) => a + b, 0) / last3.length;
-      const trend = (h[h.length - 1].close - h[0].close) / h.length;
-      let pred = Math.max(0, Math.round(avg + trend * 0.5));
-      const last = h[h.length - 1].close;
-      const recOpen = Math.max(pred + Math.ceil(avg * 0.3), pred + 5);
-      const mean = avg || 1;
-      const variance = last3.reduce((a, b) => a + (b - avg) * (b - avg), 0) / last3.length;
-      const cv = Math.sqrt(variance) / mean;
-      const conf = Math.max(5, Math.min(97, Math.round(90 - cv * 100 - (h.length < 5 ? (5 - h.length) * 8 : 0))));
-      const risk = pred <= 2 ? 'high' : pred <= 5 ? 'medium' : 'low';
-      preds.push({ id: d.id, name: d.name, last, avg: Math.round(avg), pred, recOpen, trend, conf, risk });
-      if (avg > 0 && Math.abs(last - avg) / avg > 0.5)
-        alerts.push('⚠️ <b>' + d.name + '</b>: sudden ' + (last > avg ? 'jump' : 'drop') + ' — last ' + last + ' vs avg ' + Math.round(avg) + ' on ' + h[h.length - 1].day);
-      if (last === 0) alerts.push('⛔ <b>' + d.name + '</b>: closing is ZERO (stockout) on ' + h[h.length - 1].day);
-      const opens = h.filter(x => !isNaN(x.open));
-      if (opens.length && last > opens[opens.length - 1].open)
-        alerts.push('❌ <b>' + d.name + '</b>: closing (' + last + ') exceeds opening (' + opens[opens.length - 1].open + ') — possible counting mistake');
-      if (h.length >= 3 && h.slice(-3).every(x => x.close === last))
-        alerts.push('🔁 <b>' + d.name + '</b>: unchanged for 3+ days (' + last + ') — dead stock or entry not updated');
-      if (pred <= 5) solutions.push('🛒 Reorder <b>' + d.name + '</b> — predicted closing ' + pred + '. Recommended opening: ' + recOpen);
-    });
-    const top = preds.slice(0, 15);
-    const pill = t => t === 'high' ? '<span class="pill bad">HIGH</span>' : t === 'medium' ? '<span class="pill warn">MED</span>' : '<span class="pill ok">LOW</span>';
-    const tArrow = t => t > 0.5 ? '▲ rising' : t < -0.5 ? '▼ falling' : '● stable';
-    document.getElementById('aiRows').innerHTML = top.map(p =>
-      '<tr><td>' + p.name + '</td><td>' + p.last + '</td><td>' + p.avg + '</td><td>' + tArrow(p.trend) + '</td><td><b>' + p.pred + '</b></td><td>' + p.conf + '%</td><td>' + pill(p.risk) + '</td><td>' + p.recOpen + '</td></tr>').join('');
-    const hi = preds.filter(p => p.risk === 'high').length;
-    const md = preds.filter(p => p.risk === 'medium').length;
-    document.getElementById('aiSummary').innerHTML =
-      '<span class="pill bad">' + hi + ' high stockout risk</span>' +
-      '<span class="pill warn">' + md + ' medium risk</span>' +
-      '<span class="pill ok">' + (preds.length - hi - md) + ' safe</span>';
-    document.getElementById('aiAlerts').innerHTML = alerts.length ? alerts.slice(0, 40).join('<br>') : 'No major changes or mistakes detected.';
-    const uniqSol = [...new Set(solutions)];
-    document.getElementById('aiSolutions').innerHTML =
-      (uniqSol.length ? uniqSol.slice(0, 20).join('<br>') + '<br>' : '') +
-      '✔️ General: recount any item flagged ❌ before saving.<br>' +
-      '✔️ Investigate every ⚠️ spike/drop the same day (theft, breakage, unrecorded sale).<br>' +
-      '✔️ Set opening tomorrow = recommended open in the table to avoid stockouts.';
-    document.getElementById('aiCount').textContent = preds.length + ' items predicted from ' + keys.length + ' days';
-    if (typeof Chart !== 'undefined') {
-      if (chP) chP.destroy();
-      chP = new Chart(document.getElementById('chPredict'), { type: 'bar',
-        data: { labels: top.map(p => p.name), datasets: [{ label: 'Predicted closing', data: top.map(p => p.pred), backgroundColor: '#065f46' }] }, options: { responsive: true } });
-    }
-  }
   function aiSay(who, html) {
     const box = document.getElementById('aiChat');
     const d = document.createElement('div');
@@ -1696,39 +1645,9 @@
       const docs = loadDocs();
       let n = 0;
       docs.forEach(doc => (doc.rows || []).forEach(r => { n += rowErrors(r).length; }));
-      return aiSay('ai', n ? 'Found <b>' + n + '</b> formula mistake(s) across scanned documents. Open Scanned Data → AI check all to review and rectify.' : 'No formula mistakes in scanned documents. For daily anomalies, press Run AI prediction below.');
+      return aiSay('ai', n ? 'Found <b>' + n + '</b> formula mistake(s) across scanned documents. Open Scanned Data → AI check all to review and rectify.' : 'No formula mistakes in scanned documents.');
     }
     return aiSay('ai', 'I can answer about stockouts, drinks, cash, profit and mistakes. Type <b>help</b> for examples.');
-  }
-  function isNumAI(v) { return v !== '' && v !== undefined && v !== null && !isNaN(parseFloat(v)); }
-  function checkScannedDocs() {
-    const docs = loadDocs();
-    const box = document.getElementById('scanCheckResult');
-    if (!docs.length) { box.innerHTML = 'No scanned documents yet. Scan sheets in Upload & Scan first.'; return; }
-    let html = '';
-    docs.forEach((doc, di) => {
-      const rectified = /rectified/i.test(doc.date || '');
-      const errs = [];
-      (doc.rows || []).forEach(r => {
-        const g = v => isNumAI(v) ? parseFloat(v) : undefined;
-        const o = g(r.opening), a = g(r.add), t = g(r.total), c = g(r.closing), s = g(r.sales), p = g(r.price), m = g(r.amount);
-        if (o !== undefined && a !== undefined && t !== undefined && t !== o + a)
-          errs.push('No ' + r.id + ' ' + r.name + ' — Total ' + t + ' ≠ ' + o + ' + ' + a + ' = ' + (o + a));
-        const tt = (o !== undefined && a !== undefined) ? o + a : t;
-        if (tt !== undefined && c !== undefined && s !== undefined && s !== tt - c)
-          errs.push('No ' + r.id + ' ' + r.name + ' — Sales ' + s + ' ≠ ' + tt + ' − ' + c + ' = ' + (tt - c));
-        const ss = (tt !== undefined && c !== undefined) ? tt - c : s;
-        if (ss !== undefined && p !== undefined && m !== undefined && m !== ss * p)
-          errs.push('No ' + r.id + ' ' + r.name + ' — Amount ' + m + ' ≠ ' + ss + ' × ' + p + ' = ' + (ss * p));
-      });
-      const verdict = !errs.length
-        ? (rectified ? '<b style="color:#16a34a;">✅ Rectified in the right manner — all formulas balance.</b>' : '<b style="color:#16a34a;">✅ Clean — no formula errors.</b>')
-        : '<b style="color:#b91c1c;">❌ ' + errs.length + ' error(s)' + (rectified ? ' still remain after rectification — review needed.' : ' detected.') + '</b>';
-      html += '<div class="report-card" style="margin-top:12px;"><h3>Scan ' + (di + 1) + ' — ' + docLabel(doc) + ' (' + (doc.rows || []).length + ' rows)</h3><div>' + verdict + '</div>' +
-        (errs.length ? '<div style="margin-top:8px;">' + errs.slice(0, 30).map((w, i) => (i + 1) + '. ' + w).join('<br>') + (errs.length > 30 ? '<br>...and ' + (errs.length - 30) + ' more' : '') + '</div>' : '') + '</div>';
-    });
-    box.innerHTML = html;
-    document.getElementById('scanCheckCount').textContent = docs.length + ' document(s) checked';
   }
   var scanURLs = [], clearedThumbs = {}, clearedFull = {};
   var lastText = '', lastParsed = [], lastUnparsed = '', lastRows = [], lastFound = {};
@@ -2824,6 +2743,12 @@
     const m = allDrinks.find(d => d.name.toLowerCase() === q);
     if (m && (m.price !== null && m.price !== undefined) && !document.getElementById('salePrice').dataset.touched)
       document.getElementById('salePrice').value = m.price;
+    if (m) {
+      let costs = {};
+      try { costs = JSON.parse(localStorage.getItem('nancy_costs')) || {}; } catch {}
+      if (costs[m.id] !== undefined && !document.getElementById('saleCost').dataset.touched)
+        document.getElementById('saleCost').value = costs[m.id];
+    }
     const qty = +document.getElementById('saleQty').value || 0;
     const pr = +document.getElementById('salePrice').value || 0;
     document.getElementById('saleAmount').value = qty * pr;
@@ -2833,43 +2758,152 @@
     const item = document.getElementById('saleItem').value.trim();
     const qty = +document.getElementById('saleQty').value || 0;
     const price = +document.getElementById('salePrice').value || 0;
+    const pay = document.getElementById('salePay').value;
+    const cost = +document.getElementById('saleCost').value || 0;
+    const note = document.getElementById('saleNote').value.trim();
     if (!item) { alert('Enter the item.'); return; }
     if (qty <= 0) { alert('Qty must be above 0.'); return; }
+    if (pay === 'credit' && !note) { alert('Enter the customer name for credit.'); return; }
+    if (pay === 'comp' && !note) { alert('Enter a reason for complimentary.'); return; }
+    const m = allDrinks.find(d => d.name.toLowerCase() === item.toLowerCase());
+    if (cost) {
+      try {
+        const costs = JSON.parse(localStorage.getItem('nancy_costs')) || {};
+        if (m) costs[m.id] = cost;
+        localStorage.setItem('nancy_costs', JSON.stringify(costs));
+      } catch {}
+    }
     const all = loadSales();
     const k = todayKey();
     if (!all[k]) all[k] = [];
     const now = new Date();
-    all[k].push({ item, qty, price, amount: qty * price, time: String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') });
+    const rec = { item, qty, price, amount: pay === 'comp' ? 0 : qty * price, pay, cost, note,
+      time: String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') };
+    all[k].push(rec);
     try { localStorage.setItem(SALE_KEY, JSON.stringify(all)); } catch {}
+    if (pay === 'credit') {
+      try {
+        const debts = loadDebts();
+        debts.push({ name: note, item: item + ' ×' + qty, amount: qty * price, date: k });
+        localStorage.setItem(DEBT_KEY, JSON.stringify(debts));
+        renderDebts();
+      } catch {}
+    }
     document.getElementById('saleItem').value = '';
     document.getElementById('saleQty').value = 1;
     document.getElementById('salePrice').value = '';
     delete document.getElementById('salePrice').dataset.touched;
+    document.getElementById('saleCost').value = '';
+    delete document.getElementById('saleCost').dataset.touched;
+    document.getElementById('saleNote').value = '';
     document.getElementById('saleAmount').value = '';
     renderSales();
     updateStats();
-    toast('Sale recorded: ' + item + ' × ' + qty + '.');
+    toast('Sale recorded: ' + item + ' × ' + qty + ' (' + pay + ').');
   }
-  function delSale(i) {
+  document.getElementById('saleCost').addEventListener('input', () => { document.getElementById('saleCost').dataset.touched = '1'; });
+  function quickSale(name) {
+    const m = allDrinks.find(d => d.name === name);
+    if (!m) return;
+    document.getElementById('saleItem').value = m.name;
+    document.getElementById('saleQty').value = 1;
+    delete document.getElementById('salePrice').dataset.touched;
+    saleAutofill();
+    addSale();
+  }
+  function renderQuickSale() {
+    const freq = {};
+    try {
+      const all = loadSales();
+      Object.keys(all).forEach(k => all[k].forEach(s => { freq[s.item] = (freq[s.item] || 0) + (+s.qty || 0); }));
+    } catch {}
+    let top = Object.keys(freq).sort((a, b) => freq[b] - freq[a]).slice(0, 10);
+    if (!top.length) top = allDrinks.slice(0, 10).map(d => d.name);
+    document.getElementById('quickSale').innerHTML = top.map(n =>
+      '<button class="btn-green" style="margin-top:0;" onclick="quickSale(\'' + n.replace(/\'/g, "\\'") + '\')">+ ' + n + '</button>').join('');
+  }
+  function voidSale(i) {
     const all = loadSales();
     const k = todayKey();
-    if (all[k]) all[k].splice(i, 1);
+    if (!all[k] || !all[k][i]) return;
+    const reason = document.getElementById('voidReason' + i).value || 'voided';
+    const s = all[k].splice(i, 1)[0];
+    try {
+      const voids = JSON.parse(localStorage.getItem('nancy_voids')) || [];
+      voids.push({ item: s.item, qty: s.qty, amount: s.amount, reason, date: k, time: s.time });
+      localStorage.setItem('nancy_voids', JSON.stringify(voids));
+    } catch {}
     try { localStorage.setItem(SALE_KEY, JSON.stringify(all)); } catch {}
     renderSales();
     updateStats();
+    toast('Voided (' + reason + ').');
   }
   function renderSales() {
     const list = loadSales()[todayKey()] || [];
     const tot = list.reduce((a, s) => a + (+s.amount || 0), 0);
+    const cash = list.filter(s => (s.pay || 'cash') === 'cash').reduce((a, s) => a + (+s.amount || 0), 0);
+    const mp = list.filter(s => s.pay === 'mpesa').reduce((a, s) => a + (+s.amount || 0), 0);
+    const cred = list.filter(s => s.pay === 'credit').reduce((a, s) => a + (+s.amount || 0), 0);
     document.getElementById('salesTotal').textContent = tot;
+    document.getElementById('paySplit').textContent = 'cash ' + cash + ' · mpesa ' + mp + ' · credit ' + cred;
     document.getElementById('salesRows').innerHTML = list.length
       ? list.slice().reverse().map((s, ri) => {
           const i = list.length - 1 - ri;
-          return '<tr><td>' + s.time + '</td><td>' + s.item + '</td><td>' + s.qty + '</td><td><b>' + s.amount + '</b></td><td><button class="btn-danger" onclick="delSale(' + i + ')">Delete</button></td></tr>';
+          const tag = s.pay === 'mpesa' ? 'Mpesa' : s.pay === 'credit' ? 'Credit' + (s.note ? ' (' + s.note + ')' : '') : s.pay === 'comp' ? 'Comp' + (s.note ? ' (' + s.note + ')' : '') : 'Cash';
+          return '<tr><td>' + s.time + '</td><td>' + s.item + '</td><td>' + s.qty + '</td><td>' + tag + '</td><td><b>' + s.amount + '</b></td>' +
+            '<td><select id="voidReason' + i + '" style="width:auto;padding:4px;"><option>wrong item</option><option>spillage</option><option>comp</option><option>other</option></select> ' +
+            '<button class="btn-danger" onclick="voidSale(' + i + ')">Void</button></td></tr>';
         }).join('')
-      : '<tr><td colspan="5" style="color:#6b7280;">No sales today yet.</td></tr>';
+      : '<tr><td colspan="6" style="color:#6b7280;">No sales today yet.</td></tr>';
+    renderQuickSale();
+    renderTarget(tot);
+    renderHours(list);
+    renderItemProfit(list);
   }
-  function bootSales() { renderSales(); }
+  function saveTarget() {
+    try { localStorage.setItem('nancy_target', String(+document.getElementById('salesTarget').value || 0)); } catch {}
+    renderTarget((loadSales()[todayKey()] || []).reduce((a, s) => a + (+s.amount || 0), 0));
+  }
+  function renderTarget(tot) {
+    let t = 0;
+    try { t = +localStorage.getItem('nancy_target') || 0; } catch {}
+    document.getElementById('salesTarget').value = t || '';
+    const pct = t > 0 ? Math.min(100, Math.round((tot / t) * 100)) : 0;
+    document.getElementById('targetMeter').style.width = pct + '%';
+    document.getElementById('targetMeter').style.background = pct >= 100 ? '#16a34a' : '#d97706';
+    document.getElementById('targetText').textContent = t > 0 ? tot + ' / ' + t + ' (' + pct + '%)' : 'Set a target to track progress.';
+  }
+  let chHours = null;
+  function renderHours(list) {
+    const hours = new Array(24).fill(0);
+    list.forEach(s => {
+      const hh = parseInt((s.time || '0:0').split(':')[0], 10);
+      if (!isNaN(hh)) hours[hh] += (+s.amount || 0);
+    });
+    if (typeof Chart === 'undefined' || !document.getElementById('chHours')) return;
+    if (chHours) chHours.destroy();
+    chHours = new Chart(document.getElementById('chHours'), { type: 'bar',
+      data: { labels: hours.map((_, i) => String(i).padStart(2, '0')), datasets: [{ label: 'Sales by hour', data: hours, backgroundColor: '#059669' }] },
+      options: { responsive: true } });
+  }
+  function renderItemProfit(list) {
+    const by = {};
+    list.forEach(s => {
+      if (!by[s.item]) by[s.item] = { qty: 0, rev: 0, cost: 0 };
+      by[s.item].qty += (+s.qty || 0);
+      by[s.item].rev += (+s.amount || 0);
+      by[s.item].cost += (+s.qty || 0) * (+s.cost || 0);
+    });
+    const keys = Object.keys(by).sort((a, b) => (by[b].rev - by[b].cost) - (by[a].rev - by[a].cost));
+    document.getElementById('profitRows').innerHTML = keys.length
+      ? keys.map(k => '<tr><td>' + k + '</td><td>' + by[k].qty + '</td><td>' + by[k].rev + '</td><td>' + by[k].cost + '</td><td><b>' + (by[k].rev - by[k].cost) + '</b></td></tr>').join('')
+      : '<tr><td colspan="5" style="color:#6b7280;">No sales yet.</td></tr>';
+  }
+
+  function bootSales() {
+    renderSales();
+    renderQuickSale();
+  }
   function addExpense() {
     const desc = document.getElementById('expDesc').value.trim();
     const amount = +document.getElementById('expAmount').value || 0;
@@ -3202,6 +3236,24 @@
     document.getElementById('branchRows').innerHTML = list.map(b =>
       '<tr><td>' + b.name + '</td><td>' + (b.id === cur ? '<span class="pill ok">current</span>' : '<button class="btn-green" style="margin-top:0;padding:6px 12px;" onclick="switchBranch(\'' + b.id + '\')">Switch</button>') + '</td><td>' + (b.id === 'main' ? '-' : '<button class="btn-danger" onclick="deleteBranch(\'' + b.id + '\')">Delete</button>') + '</td></tr>').join('');
   }
+  function toggleGrp(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('closed');
+    try {
+      const st = JSON.parse(localStorage.getItem('nancy_nav') || '{}');
+      st[id] = el.classList.contains('closed') ? 0 : 1;
+      localStorage.setItem('nancy_nav', JSON.stringify(st));
+    } catch {}
+  }
+  function restoreGrp() {
+    let st = {};
+    try { st = JSON.parse(localStorage.getItem('nancy_nav')) || {}; } catch {}
+    ['g-daily', 'g-smart', 'g-docs', 'g-biz', 'g-sys'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && st[id] === 0) el.classList.add('closed');
+    });
+  }
   function settingsInit() {
     try {
       const admin = JSON.parse(localStorage.getItem(ADMIN_KEY));
@@ -3213,6 +3265,7 @@
       }
     } catch {}
     renderStaff();
+    restoreGrp();
     renderBranches();
     renderAudit();
     backupReminder();
