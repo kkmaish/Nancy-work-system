@@ -1,7 +1,6 @@
-const CACHE = 'nancy-system-v13';
+const CACHE = 'nancy-system-v14';
 const FILES = [
-  './', 'index.html', 'nancy.html', 'app.html', 'system.html', 'reports.html', 'ai.html',
-  'upload.html', 'scanned-data.html', 'formulas.html', 'settings.html',
+  './', 'index.html', 'nancy.html', 'app.html', 'system.html', 'reports.html',   'upload.html', 'scanned-data.html', 'formulas.html', 'settings.html',
   'drinks.js', 'drinks.json', 'logo.png',
   'assets/fish4.jpg',
   'assets/fish3.jpg',
