@@ -2357,6 +2357,17 @@
     updateStats();
     toast('Staff added: ' + name);
   }
+  function changeRole(email, role) {
+    const staff = loadStaff();
+    const s = staff.find(x => x.email === email);
+    if (!s) return;
+    s.role = role;
+    try { localStorage.setItem(STAFF_KEY, JSON.stringify(staff)); } catch {}
+    renderStaff();
+    updateStats();
+    audit('Role changed: ' + s.name + ' → ' + role);
+    toast(s.name + ' is now ' + role + '.');
+  }
   function removeStaff(email) {
     saveStaff(loadStaff().filter(s => s.email !== email));
     const auth = getAuth(); delete auth[email.toLowerCase()]; setAuth(auth);
@@ -2383,7 +2394,7 @@
   function renderStaff() {
     const staff = loadStaff();
     document.getElementById('staffRows').innerHTML = staff.length
-      ? staff.map(s => '<tr><td>' + s.name + '</td><td>' + s.email + '</td><td>' + (s.role || 'cashier') + '</td><td><button class="btn-danger" onclick="removeStaff(\'' + s.email + '\')">Remove</button></td></tr>').join('')
+      ? staff.map(s => '<tr><td>' + s.name + '</td><td>' + s.email + '</td><td><select onchange="changeRole(\'' + s.email + '\',this.value)"><option value="cashier"' + ((s.role || 'cashier') === 'cashier' ? ' selected' : '') + '>cashier</option><option value="manager"' + (s.role === 'manager' ? ' selected' : '') + '>manager</option></select></td><td><button class="btn-danger" onclick="removeStaff(\'' + s.email + '\')">Remove</button></td></tr>').join('')
       : '<tr><td colspan="4" style="color:#6b7280;">No staff yet.</td></tr>';
     document.getElementById('resetStaffEmail').innerHTML = staff.map(s => '<option>' + s.email + '</option>').join('');
   }

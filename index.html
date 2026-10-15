@@ -124,6 +124,11 @@
       <input type="email" id="suEmail" placeholder="you@example.com" required />
       <label for="suPass">Password (strong)</label>
       <input type="password" id="suPass" placeholder="Min 8 characters, mixed" required />
+      <label for="suRole">Sign up as</label>
+      <select id="suRole" style="width:100%;padding:12px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:15px;">
+        <option value="manager">Manager (full access)</option>
+        <option value="cashier">Cashier (sales + stock only)</option>
+      </select>
       <label for="suPin">Choose 4-digit PIN</label>
       <input type="password" id="suPin" inputmode="numeric" maxlength="4" placeholder="••••" required />
       <button class="btn" type="submit" style="margin-top:14px;">Create cashier account</button>
@@ -360,7 +365,7 @@
     try { staff = JSON.parse(localStorage.getItem('nancy_staff')) || []; } catch {}
     const auth = getAuth();
     if (staff.some(s => s.email.toLowerCase() === email) || auth[email] !== undefined) { showError('Account already exists. Please login.'); return; }
-    staff.push({ name, email, role: 'cashier', pin });
+    staff.push({ name, email, role: document.getElementById('suRole').value || 'cashier', pin });
     try { localStorage.setItem('nancy_staff', JSON.stringify(staff)); } catch {}
     auth[email] = pw;
     setAuth(auth);
