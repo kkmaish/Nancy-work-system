@@ -194,7 +194,24 @@
       <h3>⚠️ Low stock watch <span class="pill warn">advanced</span></h3>
       <div id="lowStock" style="font-size:13px;">Save days to activate the watch.</div>
     </div>
+    <div class="card gold">
+      <h3>💰 Today at a glance <span class="pill" id="branchBadge" style="background:#f5f3ff;color:#4c1d95;">Main Branch</span></h3>
+      <div id="cashGlance" style="font-size:14px;">No cash count today yet.</div>
+    </div>
+    <div class="card pink">
+      <h3>🚨 Alerts rollup <span id="alertCount" class="pill warn">0 open</span></h3>
+      <div id="alertsRollup" style="font-size:13px;">All clear.</div>
+    </div>
+    <div class="report-grid">
+      <div class="report-card"><h3>🏆 Best sellers today</h3><div id="bestSellers" style="font-size:13px;">No sales recorded today.</div></div>
+      <div class="report-card"><h3>📈 7-day revenue trend</h3><canvas id="sparkRev" height="120"></canvas><div id="sparkNote" style="font-size:12px;color:#6b7280;"></div></div>
+    </div>
+    <div class="report-grid">
+      <div class="report-card"><h3>🕒 Recent activity</h3><div id="activityFeed" style="font-size:13px;max-height:220px;overflow:auto;"></div></div>
+      <div class="report-card"><h3>🌅 Morning briefing</h3><div id="briefing" style="font-size:13px;"></div><button class="btn-small" onclick="runBriefing()">Run briefing</button></div>
+    </div>
     <div class="card">
+      <div id="backupHealth" style="font-size:13px;"></div>
       <h3>Quick actions</h3>
       <div class="report-row">
         <button class="btn-small" onclick="showSection('drinks')">Open stock sheet</button>
@@ -1117,7 +1134,117 @@
       box.innerHTML = low.length
         ? 'Closing at 5 or below on ' + keys[keys.length - 1] + ': ' + low.map(d => '<b>' + d.name + '</b> (' + last[d.id] + ')').join(', ')
         : 'All stocked items above 5 on ' + keys[keys.length - 1] + '.';
+      try { renderDashAdvanced(src, keys, today, sales, exps); } catch (e) { console.error('dash adv', e); }
     } catch {}
+  }
+  function renderDashAdvanced(src, keys, today, sales, exps) {
+    try {
+      const bl = branchList().find(b => b.id === currentBranch());
+      document.getElementById('branchBadge').textContent = (bl || { name: 'Main Branch' }).name;
+    } catch {}
+    const cash = loadCash()[today];
+    document.getElementById('cashGlance').innerHTML = cash
+      ? 'Expected <b>' + cash.expected + '</b> · Cash ' + cash.cash + ' + Mpesa ' + cash.mpesa + ' → <b>' + (cash.cash + cash.mpesa - cash.expected >= 0 ? '+' : '') + (cash.cash + cash.mpesa - cash.expected) + '</b> ' +
+        ((cash.cash + cash.mpesa - cash.expected) === 0 ? '<span class="pill ok">balanced</span>' : '<span class="pill bad">off</span>')
+      : 'No cash count today yet. <a href="#" onclick="showSection(\'cash\');return false;">Count now →</a>';
+    const alerts = [];
+    try {
+      const ex = loadExpiry();
+      const soon = ex.filter(e => daysLeft(e.date) <= 30);
+      if (soon.length) alerts.push('<b>' + soon.length + '</b> expiring ≤30d (<a href="#" onclick="showSection(\'orders\');return false;">view</a>)');
+    } catch {}
+    try {
+      let unatt = 0;
+      loadDocs().forEach((doc, i, arr) => {
+        if (/rectified/i.test(doc.date || '')) return;
+        const laterFixed = arr.slice(i + 1).some(d => /rectified/i.test(d.date || ''));
+        if (laterFixed) return;
+        (doc.rows || []).forEach(r => { unatt += rowErrors(r).length; });
+      });
+      if (unatt) alerts.push('<b>' + unatt + '</b> unattended scan mistake(s) (<a href="#" onclick="showSection(\'scanned\');return false;">review</a>)');
+    } catch {}
+    try {
+      const owed = loadDebts().reduce((a, d) => a + (+d.amount || 0), 0);
+      if (owed > 0) alerts.push('<b>' + owed + '</b> owed in debts (<a href="#" onclick="showSection(\'debts\');return false;">collect</a>)');
+    } catch {}
+    try {
+      const pend = loadOrders().filter(o => o.status !== 'received').length;
+      if (pend > 0) alerts.push('<b>' + pend + '</b> pending order(s) (<a href="#" onclick="showSection(\'orders\');return false;">view</a>)');
+    } catch {}
+    document.getElementById('alertCount').textContent = alerts.length + ' open';
+    document.getElementById('alertsRollup').innerHTML = alerts.length ? alerts.map((a, i) => (i + 1) + '. ' + a).join('<br>') : 'All clear. Nothing needs attention.';
+    try {
+      const byItem = {};
+      (loadSales()[today] || []).forEach(s => { byItem[s.item] = (byItem[s.item] || 0) + (+s.qty || 0); });
+      const top = Object.keys(byItem).sort((a, b) => byItem[b] - byItem[a]).slice(0, 5);
+      document.getElementById('bestSellers').innerHTML = top.length
+        ? top.map((k, i) => (i + 1) + '. <b>' + k + '</b> — ' + byItem[k] + ' sold').join('<br>')
+        : 'No sales recorded today.';
+    } catch {}
+    try {
+      const salesAll = loadSales(), expAll = loadExpenses();
+      const set = {};
+      Object.keys(salesAll).forEach(k => set[k] = 1);
+      expAll.forEach(e => { if (e.date) set[e.date.slice(0, 10)] = 1; });
+      const dk = Object.keys(set).sort().slice(-7);
+      const cv = document.getElementById('sparkRev');
+      const ctx = cv.getContext('2d');
+      const W2 = cv.width = cv.offsetWidth || 400, H2 = cv.height = 120;
+      ctx.clearRect(0, 0, W2, H2);
+      const vals = dk.map(k => (salesAll[k] || []).reduce((a, s) => a + (+s.amount || 0), 0) - expAll.filter(e => (e.date || '').slice(0, 10) === k).reduce((a, e) => a + (+e.amount || 0), 0));
+      document.getElementById('sparkNote').textContent = dk.length ? 'Profit last ' + dk.length + ' active day(s).' : 'Record sales/expenses to draw the trend.';
+      if (vals.length > 1) {
+        const mx = Math.max(...vals, 1), mn = Math.min(...vals, 0);
+        const X = i => 10 + i * ((W2 - 20) / (vals.length - 1));
+        const Y = v => H2 - 10 - ((v - mn) / ((mx - mn) || 1)) * (H2 - 20);
+        ctx.strokeStyle = '#059669'; ctx.lineWidth = 2.5; ctx.beginPath();
+        vals.forEach((v, i) => i ? ctx.lineTo(X(i), Y(v)) : ctx.moveTo(X(i), Y(v)));
+        ctx.stroke();
+        ctx.lineTo(X(vals.length - 1), H2); ctx.lineTo(X(0), H2); ctx.closePath();
+        ctx.fillStyle = 'rgba(5,150,105,.12)'; ctx.fill();
+      }
+    } catch {}
+    try {
+      let log = [];
+      try { log = JSON.parse(localStorage.getItem('nancy_audit')) || []; } catch {}
+      document.getElementById('activityFeed').innerHTML = log.length
+        ? log.slice(-8).reverse().map(e => '• <b>' + (e.user || 'system') + '</b> ' + e.action + ' <span style="color:#a8a29e;">' + e.t + '</span>').join('<br>')
+        : 'No activity recorded yet.';
+    } catch {}
+    try {
+      let last = null;
+      try { last = localStorage.getItem('nancy_lastbackup'); } catch {}
+      const el = document.getElementById('backupHealth');
+      if (!last) el.innerHTML = '💾 <b>No backup yet</b> — <a href="#" onclick="showSection(\'settings\');return false;">back up now</a>.';
+      else {
+        const d = Math.round((Date.now() - +last) / 86400000);
+        el.innerHTML = d >= 7 ? '💾 <b style="color:#b91c1c;">Backup ' + d + ' days old</b> — back up in Settings.' : '💾 Backup fresh (' + d + 'd ago).';
+      }
+    } catch {}
+  }
+  function runBriefing() {
+    const box = document.getElementById('briefing');
+    const src = reportSource();
+    const keys = Object.keys(src).sort().filter(k => k.indexOf('demo-') !== 0);
+    if (keys.length < 2) { box.innerHTML = 'Need at least 2 saved days for a briefing.'; return; }
+    const a = keys[keys.length - 2], b = keys[keys.length - 1];
+    const ca = src[a].closing || {}, ob = src[b].opening || {};
+    const ids = {};
+    Object.keys(ca).forEach(k => ids[k] = 1);
+    Object.keys(ob).forEach(k => ids[k] = 1);
+    const bad = Object.keys(ids).filter(k => (+(ca[k] ?? NaN) !== +(ob[k] ?? NaN)) && (ca[k] !== undefined || ob[k] !== undefined) && !(isNaN(+ca[k]) && isNaN(+ob[k])));
+    const mism = bad.filter(k => {
+      const x = ca[k], y = ob[k];
+      if (x === undefined || y === undefined) return true;
+      return +x !== +y;
+    });
+    box.innerHTML = '<b>' + a + ' closing → ' + b + ' opening:</b><br>' +
+      (mism.length
+        ? mism.slice(0, 15).map(k => {
+            const nm = (allDrinks.find(d => String(d.id) === String(k)) || {}).name || ('#' + k);
+            return '• <b>' + nm + '</b>: closed ' + (ca[k] ?? '–') + ', opened ' + (ob[k] ?? '–');
+          }).join('<br>') + (mism.length > 15 ? '<br>...and ' + (mism.length - 15) + ' more' : '')
+        : '✅ All openings match yesterday\'s closings. Clean handover.');
   }
   function bootDrinks() {
     applyPriceOverrides();
