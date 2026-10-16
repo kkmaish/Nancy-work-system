@@ -53,10 +53,6 @@
   .tabs { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; flex: 1; overflow-y: auto; }
   .tabs button { background: rgba(255,255,255,.07); border: 1px solid transparent; color: #fdf6e3; font-weight: 700; font-size: 14.5px; padding: 12px 15px; cursor: pointer; border-radius: 14px; transition: .18s; text-align: left; display: flex; align-items: center; gap: 10px; }
   .tabs button:hover { background: rgba(251,191,36,.22); transform: translateX(4px); color: #fff; }
-  .grp { width: 100%; background: rgba(251,191,36,.14); border: 1px solid rgba(251,191,36,.35); color: #fde68a; font-weight: 800; font-size: 12.5px; letter-spacing: 1px; text-transform: uppercase; padding: 9px 12px; cursor: pointer; border-radius: 10px; text-align: left; margin-top: 6px; }
-  .grp:hover { background: rgba(251,191,36,.28); }
-  .grp-body { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
-  .grp-body.closed { display: none; }
   .tabs button.active { background: linear-gradient(120deg, #fbbf24, #f59e0b); color: #064e3b; box-shadow: 0 6px 16px rgba(0,0,0,.3); }
   main { padding: 26px; max-width: 1200px; margin: auto; width: 100%; }
   .page-title { font-size: 30px; color: var(--deep); }
@@ -159,39 +155,24 @@
 <aside class="sidebar">
   <div class="brand"><img src="logo.png" alt="Logo" /><h1>NANCY'S <span>SYSTEM</span><small>precious · strong · advanced</small></h1></div>
   <div class="tabs" id="tabs">
-    <button class="grp" onclick="toggleGrp('g-daily')">📅 Daily</button>
-    <div class="grp-body" id="g-daily">
     <button data-sec="dashboard" onclick="showSection('dashboard')" class="active">📊 Dashboard</button>
     <button data-sec="drinks" onclick="showSection('drinks')">🥤 Drinks</button>
     <button data-sec="sales" onclick="showSection('sales')">🧾 Sales</button>
     <button data-sec="expenses" onclick="showSection('expenses')">💸 Expenses</button>
     <button data-sec="cash" onclick="showSection('cash')">💰 Cash</button>
-    </div>
-    <button class="grp" onclick="toggleGrp('g-smart')">🧠 Intelligence</button>
-    <div class="grp-body" id="g-smart">
     <button data-sec="reports" onclick="showSection('reports')">📝 Reports</button>
     <button data-sec="aichat" onclick="showSection('aichat')">💬 AI Chat</button>
-    </div>
-    <button class="grp" onclick="toggleGrp('g-docs')">📁 Documents</button>
-    <div class="grp-body" id="g-docs">
     <button data-sec="upload" onclick="showSection('upload')">📤 Upload & Scan</button>
     <button data-sec="scan" onclick="showSection('upload');setTimeout(()=>{const el=document.getElementById('checkBox');if(el)el.scrollIntoView({block:'start'});},80);return false;">🔍 Scan</button>
     <button data-sec="scanned" onclick="showSection('scanned')">📑 Scanned Data</button>
     <button data-sec="formulas" onclick="showSection('formulas')">🧮 Formulas</button>
-    </div>
-    <button class="grp" onclick="toggleGrp('g-biz')">💼 Business</button>
-    <div class="grp-body" id="g-biz">
     <button data-sec="debts" onclick="showSection('debts')">📒 Debts</button>
     <button data-sec="orders" onclick="showSection('orders')">📦 Orders</button>
     <button data-sec="wastage" onclick="showSection('wastage')">🧾 Wastage</button>
     <button data-sec="stocktake" onclick="showSection('stocktake')">⚡ Stocktake</button>
     <button data-sec="scan" onclick="showSection('scan')">📷 Barcode</button>
-    </div>
-    <button class="grp" onclick="toggleGrp('g-sys')">🛠️ System</button>
-    <div class="grp-body" id="g-sys">
     <button data-sec="roadmap" onclick="showSection('roadmap')">🌟 Roadmap</button>
     <button data-sec="settings" onclick="showSection('settings')">⚙️ Settings</button>
-    </div>
     <a class="side-logout" href="index.html" style="color:#fde68a;font-weight:700;font-size:14px;padding:12px 8px;text-decoration:none;">⏻ Logout</a>
   </div>
 </aside>
@@ -3247,24 +3228,6 @@
     document.getElementById('branchRows').innerHTML = list.map(b =>
       '<tr><td>' + b.name + '</td><td>' + (b.id === cur ? '<span class="pill ok">current</span>' : '<button class="btn-green" style="margin-top:0;padding:6px 12px;" onclick="switchBranch(\'' + b.id + '\')">Switch</button>') + '</td><td>' + (b.id === 'main' ? '-' : '<button class="btn-danger" onclick="deleteBranch(\'' + b.id + '\')">Delete</button>') + '</td></tr>').join('');
   }
-  function toggleGrp(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.toggle('closed');
-    try {
-      const st = JSON.parse(localStorage.getItem('nancy_nav') || '{}');
-      st[id] = el.classList.contains('closed') ? 0 : 1;
-      localStorage.setItem('nancy_nav', JSON.stringify(st));
-    } catch {}
-  }
-  function restoreGrp() {
-    let st = {};
-    try { st = JSON.parse(localStorage.getItem('nancy_nav')) || {}; } catch {}
-    ['g-daily', 'g-smart', 'g-docs', 'g-biz', 'g-sys'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el && st[id] === 0) el.classList.add('closed');
-    });
-  }
   function settingsInit() {
     try {
       const admin = JSON.parse(localStorage.getItem(ADMIN_KEY));
@@ -3276,7 +3239,6 @@
       }
     } catch {}
     renderStaff();
-    restoreGrp();
     renderBranches();
     renderAudit();
     backupReminder();
