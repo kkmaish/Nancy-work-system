@@ -175,6 +175,7 @@
     <button data-sec="stocktake" onclick="showSection('stocktake')">⚡ Stocktake</button>
     <button data-sec="scan" onclick="showSection('scan')">📷 Barcode</button>
     <button data-sec="roadmap" onclick="showSection('roadmap')">🌟 Roadmap</button>
+    <button data-sec="backup" onclick="showSection('settings');setTimeout(()=>{const el=document.getElementById('backupBox');if(el)el.scrollIntoView({block:'start'});},80);return false;">💾 Backup</button>
     <button data-sec="settings" onclick="showSection('settings')">⚙️ Settings</button>
     <a class="side-logout" href="index.html" style="color:#fde68a;font-weight:700;font-size:14px;padding:12px 8px;text-decoration:none;">⏻ Logout</a>
   </div>
@@ -386,6 +387,7 @@
       <div style="padding:18px 20px;">
         <div class="report-row">
           <button class="btn-green" onclick="scanAllUploads()">🔍 Scan all uploaded sheets</button>
+          <button class="btn-small" onclick="deblurScanAll()">🌀 Deblur scan (medium blur)</button>
           <button class="btn-small" onclick="showSection('upload');setTimeout(()=>{const el=document.getElementById('phoneBox');if(el)el.scrollIntoView();},80);">📱 Phone text scan</button>
         </div>
         <div id="scanPanelOut" style="font-size:13px;margin-top:8px;color:#374151;">Upload sheets below, then scan them all at once into the stock table.</div>
@@ -828,9 +830,11 @@
         <button class="btn-small" onclick="copyGen()">Copy</button>
       </div>
       <div class="card form-card">
-        <h3>💾 Backup & Restore</h3>
+        <div id="backupBox"></div><h3>💾 Backup & Restore</h3>
         <div class="hint">Downloads everything (stock days, scans, staff, cash, debts, orders, wastage) as one file. Restore it on this or another device.</div>
         <button class="btn-small" onclick="exportBackup()">Download backup</button>
+        <button class="btn-small" onclick="emailBackup()">📧 Email backup via Gmail</button>
+        <div class="hint">Email backup downloads the file and opens Gmail with subject and note ready — attach the downloaded file and send to yourself.</div>
         <div id="backupNote" style="font-size:13px;margin-top:8px;"></div>
           <div class="card form-card" style="margin-top:16px;">
             <h3>Audit trail</h3>
@@ -1059,6 +1063,7 @@
     EXPIRY_KEY += '::' + b; SUPCOST_KEY += '::' + b; SALE_KEY += '::' + b; EXP_KEY += '::' + b; PRICE_KEY += '::' + b;
   })();
   const CLEARITY = 1.6;
+  var DEBLUR = false;
   function loadDays() { try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch { return {}; } }
   function storeDays(d) { try { localStorage.setItem(LS_KEY, JSON.stringify(d)); } catch {} }
   function loadDocs() { try { return JSON.parse(localStorage.getItem(BK('nancy_scanned_docs'))) || []; } catch { return []; } }
@@ -1677,19 +1682,24 @@
     const sorted = Float32Array.from(gray).sort();
     const lo = sorted[Math.floor(n * 0.02)], hi = sorted[Math.floor(n * 0.98)];
     const span = Math.max(1, hi - lo);
-    const k = 0.3 * contrast;
+    const passes = DEBLUR ? 2 : 1;
+    const kk = (DEBLUR ? 0.55 : 0.3) * contrast;
     const sharp = new Float32Array(n);
+    let src = gray;
     const W = cv.width, H = cv.height;
-    for (let y = 0; y < H; y++) {
-      for (let x = 0; x < W; x++) {
-        const i = y * W + x;
-        const st = g => 8 + ((g - lo) / span) * 239;
-        const base = st(gray[i]);
-        const l = x > 0 ? gray[i - 1] : gray[i], r = x < W - 1 ? gray[i + 1] : gray[i];
-        const u = y > 0 ? gray[i - W] : gray[i], dn = y < H - 1 ? gray[i + W] : gray[i];
-        let s = base + k * (4 * base - (st(l) + st(r) + st(u) + st(dn)));
-        sharp[i] = s < 0 ? 0 : s > 255 ? 255 : s;
+    for (let ps = 0; ps < passes; ps++) {
+      for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+          const i = y * W + x;
+          const st = g => 8 + ((g - lo) / span) * 239;
+          const base = st(src[i]);
+          const l = x > 0 ? src[i - 1] : src[i], r = x < W - 1 ? src[i + 1] : src[i];
+          const u = y > 0 ? src[i - W] : src[i], dn = y < H - 1 ? src[i + W] : src[i];
+          let s = base + kk * (4 * base - (st(l) + st(r) + st(u) + st(dn)));
+          sharp[i] = s < 0 ? 0 : s > 255 ? 255 : s;
+        }
       }
+      src = sharp;
     }
     for (let i = 0; i < n; i++) d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = sharp[i];
     ctx.putImageData(img, 0, 0);
@@ -2705,6 +2715,24 @@
       toast('Backup downloaded.');
     } catch (e) { alert('Backup failed: ' + e.message); }
   }
+  function lastBackupFile() { return 'nancy-backup-' + new Date().toISOString().slice(0, 10) + '.json'; }
+  function emailBackup() {
+    exportBackup(true);
+    let to = '';
+    try {
+      const em = JSON.parse(localStorage.getItem(EMAIL_KEY));
+      if (em && em.alerts) to = em.alerts;
+    } catch {}
+    if (!to) {
+      const input = prompt('Send backup to which Gmail address?');
+      if (!input) return;
+      to = input.trim();
+    }
+    const subject = encodeURIComponent("Nancy System backup " + new Date().toISOString().slice(0, 10));
+    const body = encodeURIComponent('Attached is the Nancy System backup (' + lastBackupFile() + '). Save it somewhere safe — it restores everything via Settings → Restore.');
+    window.open('https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(to) + '&su=' + subject + '&body=' + body, '_blank');
+    toast('Attach the downloaded backup file in Gmail and send.');
+  }
   function importBackup() {
     const f = document.getElementById('backupFile').files[0];
     if (!f) return;
@@ -2999,7 +3027,13 @@
     loadOrders().forEach(o => { if (o.supplier) set[o.supplier] = 1; });
     return Object.keys(set);
   }
-  async function scanAllUploads() {
+  async function deblurScanAll() {
+    DEBLUR = true;
+    document.getElementById('scanPanelOut').innerHTML = 'Heavy deblur mode on — expect some grain on badly blurred pages.';
+    try { await scanAllUploads(true); }
+    finally { DEBLUR = false; }
+  }
+  async function scanAllUploads(forceEnhance) {
     const box = document.getElementById('scanPanelOut');
     const status = document.getElementById('scanPanelStatus');
     const files = scanURLs.filter(u => u.file);
@@ -3014,7 +3048,7 @@
         status.textContent = 'Reading ' + (++count) + '/' + total + '...';
         box.innerHTML = 'Scanning <b>' + u.file.name + '</b> (' + count + '/' + total + ')...';
         let input = u.file;
-        if (!asFinal) {
+        if (!asFinal || forceEnhance) {
           const cv = await enhanceImage(u.file, CLEARITY, 0, 3000000);
           input = await canvasBlob(cv);
         }
@@ -3026,7 +3060,13 @@
       try {
         status.textContent = 'Reading ' + (++count) + '/' + total + '...';
         box.innerHTML = 'Scanning <b>' + s.name + '</b> (' + count + '/' + total + ')...';
-        const blob = await (await fetch(s.img)).blob();
+        let blob = await (await fetch(s.img)).blob();
+        if (forceEnhance) {
+          try {
+            const cv = await enhanceImage(blob, CLEARITY, 0, 3000000);
+            blob = await canvasBlob(cv);
+          } catch {}
+        }
         const res = await Tesseract.recognize(blob, 'eng');
         fullText += '===== ' + s.name + ' =====\n' + (res.data.text || '').trim() + '\n\n';
       } catch (e) { box.innerHTML += '<br>⚠️ ' + s.name + ': ' + e.message; }
