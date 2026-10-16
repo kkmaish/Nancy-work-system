@@ -80,6 +80,9 @@
   td input.item-input { width: 170px; }
   td.bad { color: var(--bad); font-weight: 700; text-decoration: underline; text-decoration-thickness: 2px; }
   td.fixed { background: #dcfce7; font-weight: 700; }
+  td.vbad { background: #fee2e2; font-weight: 700; }
+  td.vwarn { background: #fef3c7; }
+  tfoot td { font-weight: 800; background: #f7f2e2; color: #065f46; }
   label { font-size: 13px; font-weight: 600; color: #44403c; display: block; margin: 12px 0 6px; }
   .form-card input, .form-card select, .form-card textarea { width: 100%; padding: 11px 13px; border: 1.5px solid var(--line); border-radius: 10px; font-size: 14px; outline: none; }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -232,12 +235,14 @@
           <input type="date" id="repDate" style="width:auto;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;" />
           <button class="btn-small" onclick="saveDay()">Save day</button>
               <button class="btn-green" onclick="savePrices()">Save prices</button>
+              <button class="btn-small" onclick="carryForward()">Carry forward</button>
           <button class="btn-green" onclick="clearDraft(true)">Clear draft</button>
         </div>
       </div>
       <table>
         <thead><tr><th>No</th><th>Item</th><th>Opening</th><th>Add</th><th>Total</th><th>Closing</th><th>Sales</th><th>Price</th><th>Amount</th></tr></thead>
         <tbody id="drinkRows"><tr><td colspan="9">Loading...</td></tr></tbody>
+        <tfoot><tr><td colspan="2">TOTALS</td><td id="tOpen">0</td><td id="tAdd">0</td><td id="tTot">0</td><td id="tClose">0</td><td id="tSales">0</td><td id="tPrice">—</td><td id="tAmt">0</td></tr></tfoot>
       </table>
       <datalist id="drinkNames"></datalist>
     </div>
@@ -1261,6 +1266,8 @@
     if (!row) return;
     if (e.target.classList.contains('item-input')) autofillPrice(row);
     calcRow(row);
+    flagRow(row);
+    updateTotals();
     clearTimeout(draftTimer);
     draftTimer = setTimeout(saveDraft, 800);
   });
@@ -1328,6 +1335,8 @@
     }
     document.getElementById('drinkRows').innerHTML = html;
     document.getElementById('drinkNames').innerHTML = allDrinks.map(d => '<option value="' + d.name + '">').join('');
+    updateTotals();
+    document.querySelectorAll('#drinkRows tr[data-id]').forEach(flagRow);
     restoreDraft();
   }
   function filterDrinks() {
@@ -2719,6 +2728,59 @@
     try { ov = JSON.parse(localStorage.getItem(PRICE_KEY)); } catch {}
     if (!ov) return;
     allDrinks.forEach(d => { if (ov[d.id] !== undefined && ov[d.id] !== '') d.price = +ov[d.id]; });
+  }
+  function carryForward() {
+    const exp = latestClosing();
+    const ids = Object.keys(exp);
+    if (!ids.length) { alert('No saved day to carry from. Save a day first.'); return; }
+    let n = 0;
+    document.querySelectorAll('#drinkRows tr[data-id]').forEach(row => {
+      const id = row.getAttribute('data-id');
+      if (exp[id] !== undefined) { row.querySelector('.c-open').value = exp[id]; calcRow(row); n++; }
+    });
+    updateTotals();
+    toast('Carried forward ' + n + ' openings from last closing.');
+    audit('Carried forward ' + n + ' openings');
+  }
+  function updateTotals() {
+    let o = 0, a = 0, t = 0, c = 0, s = 0, m = 0;
+    document.querySelectorAll('#drinkRows tr[data-id]').forEach(row => {
+      o += num(row.querySelector('.c-open').value);
+      a += num(row.querySelector('.c-add').value);
+      t += num(row.querySelector('.c-total').textContent);
+      c += num(row.querySelector('.c-close').value);
+      s += num(row.querySelector('.c-sales').textContent);
+      m += num(row.querySelector('.c-amount').textContent);
+    });
+    document.getElementById('tOpen').textContent = o;
+    document.getElementById('tAdd').textContent = a;
+    document.getElementById('tTot').textContent = t;
+    document.getElementById('tClose').textContent = c;
+    document.getElementById('tSales').textContent = s;
+    document.getElementById('tAmt').textContent = m;
+  }
+  function flagRow(row) {
+    const closeCell = row.querySelector('.c-close').closest('td');
+    closeCell.classList.remove('vbad', 'vwarn');
+    closeCell.removeAttribute('title');
+    const id = row.getAttribute('data-id');
+    if (!id) return;
+    const closing = num(row.querySelector('.c-close').value);
+    if (!row.querySelector('.c-close').value) return;
+    const total = num(row.querySelector('.c-total').textContent);
+    if (closing > total) {
+      closeCell.classList.add('vbad');
+      closeCell.title = 'Closing exceeds total — sales would go negative. Check counting.';
+      return;
+    }
+    const exp = latestClosing()[id];
+    if (exp !== undefined && +exp > 0) {
+      const move = Math.abs(closing - +exp) / +exp;
+      if (move > 0.5) {
+        closeCell.classList.add('vwarn');
+        closeCell.title = 'Odd move vs last closing (' + exp + '). Verify count.';
+      }
+    }
   }
   function savePrices() {
     const ov = {};
